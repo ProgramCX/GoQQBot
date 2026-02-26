@@ -12,28 +12,28 @@ import (
 )
 
 type TypeMessage int
-type eventId string
+type EventId string
 
-type GroupEventId eventId
-type PrivateEventId eventId
+type GroupEventId EventId
+type PrivateEventId EventId
 
 // Message Types
 const (
-	PLAINTEXT TypeMessage = iota
-	MARKDOWN  TypeMessage = iota + 1
-	ARK
-	EMBED
-	MEDIA = iota + 3
+	PLAINTEXT TypeMessage = TypeMessage(0)
+	MARKDOWN  TypeMessage = TypeMessage(2)
+	ARK                   = TypeMessage(3)
+	EMBED                 = TypeMessage(4)
+	MEDIA                 = TypeMessage(7)
 )
 
 // EventIds
 // reference: https://bot.q.qq.com/wiki/develop/api-v2/server-inter/message/send-receive/send.html
 const (
-	INTERACTION_CREATE eventId = "INTERACTION_CREATE"
-	C2C_MSG_RECEIVE    eventId = "C2C_MSG_RECEIVE"
-	FRIEND_ADD         eventId = "FRIEND_ADD"
-	GROUP_ADD_ROBOT    eventId = "GROUP_ADD_ROBOT"
-	GROUP_MSG_RECEIVE  eventId = "GROUP_MSG_RECEIVE"
+	INTERACTION_CREATE EventId = "INTERACTION_CREATE"
+	C2C_MSG_RECEIVE    EventId = "C2C_MSG_RECEIVE"
+	FRIEND_ADD         EventId = "FRIEND_ADD"
+	GROUP_ADD_ROBOT    EventId = "GROUP_ADD_ROBOT"
+	GROUP_MSG_RECEIVE  EventId = "GROUP_MSG_RECEIVE"
 )
 
 type CommonSendMessage struct {
@@ -43,7 +43,7 @@ type CommonSendMessage struct {
 	KeyBoards        interaction.Keyboard `json:"keyboard" validate:"omitempty"`
 	Ark              types.Ark            `json:"ark" validate:"omitempty"`
 	MessageReference string               `json:"message_reference" validate:"omitempty"` // Not Supported Yet
-	QQEventID        eventId              `json:"event_id" validate:"omitempty"`
+	QQEventID        EventId              `json:"event_id" validate:"omitempty"`
 	MsgId            string               `json:"msg_id" validate:"omitempty"`
 	MsgSeq           int                  `json:"msg_seq" validate:"omitempty"`
 }
@@ -75,7 +75,7 @@ func (e PrivateEventId) Valid() bool {
 	}
 }
 
-func (e GroupEventId) SetGroupEventId(id eventId) error {
+func (e GroupEventId) SetGroupEventId(id EventId) error {
 	if !e.Valid() {
 		return fmt.Errorf("GroupEventId %s is not valid", id)
 	}
