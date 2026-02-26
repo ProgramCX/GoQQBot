@@ -14,14 +14,13 @@ import (
 
 	"github.com/ProgramCX/GoQQBot/internal/foundation/config"
 	"github.com/ProgramCX/GoQQBot/internal/foundation/logger"
-	"github.com/ProgramCX/GoQQBot/internal/shared/types"
+	"github.com/ProgramCX/GoQQBot/shared/types"
 )
 
 type WebhookAdapter struct {
 	config    config.Config
 	validator Validator
 	server    *http.Server
-	//submitToPool func(task *types.Task)
 	onReceive func(payload *types.Payload)
 }
 

@@ -4,12 +4,9 @@
 
 package types
 
-import (
-	"context"
-)
-
-type Task struct {
-	Ctx     context.Context
-	Payload *Payload
-	Done    func()
+type Context struct {
+	Payload    *Payload
+	Command    string
+	Args       []string
+	RawMessage string
 }

@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/ProgramCX/GoQQBot/internal/foundation/logger"
-	"github.com/ProgramCX/GoQQBot/internal/shared/types"
+	"github.com/ProgramCX/GoQQBot/shared/types"
 )
 
 // Pool definition

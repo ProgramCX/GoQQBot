@@ -16,10 +16,14 @@ const (
 	DefaultConfigFile = "config.yaml"
 )
 
-// LoadConfig load config from config.yaml file
-// It returns error if config.yaml file is invalid
-func LoadConfig() (*Config, error) {
-	data, err := os.ReadFile(DefaultConfigFile)
+// LoadConfig load config from the specified path.
+// If no path is provided, it defaults to "config.yaml" in the current working directory.
+func LoadConfig(path ...string) (*Config, error) {
+	configPath := DefaultConfigFile
+	if len(path) > 0 && path[0] != "" {
+		configPath = path[0]
+	}
+	data, err := os.ReadFile(configPath)
 	if err != nil {
 		logger.ERROR("read config file failed: %v", err)
 		return nil, err
