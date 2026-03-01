@@ -72,9 +72,17 @@ func (web *WebhookAdapter) handleFunc(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Handle Verification Request
+	// Handle Verification Request (op=13)
 	if payload.Op == types.VerifyOp {
+		//logger.INFO("Received verification request | Op: %d | D: %s", payload.Op, string(payload.D))
 		web.handleValidation(w, payload.D)
+		return
+	}
+
+	// For normal events, verify Ed25519 signature
+	if !web.validator.VerifyEventSignatureFromRequest(r, body) {
+		logger.WARN("Signature verification failed")
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
@@ -97,17 +105,26 @@ func (web *WebhookAdapter) handleFunc(w http.ResponseWriter, r *http.Request) {
 // handle webhook validation
 // See: https://q.qq.com/qqbot/#/developer/webhook-setting
 func (web *WebhookAdapter) handleValidation(w http.ResponseWriter, data []byte) {
+	logger.DEBUG("Validation Request: %s", data)
+
 	resp, err := web.validator.Validate(data)
 	if err != nil {
+		logger.ERROR("Validation failed: %v", err)
 		http.Error(w, "validation failed", http.StatusForbidden)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	// Log response for debugging
+	respJSON, _ := json.Marshal(resp)
+	logger.DEBUG("Validation Response: %s", string(respJSON))
 
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		logger.ERROR("Parse Json Error: %v", err)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	if _, err := w.Write(respJSON); err != nil {
+		logger.ERROR("Write Response Error: %v", err)
 		return
 	}
+
 	logger.INFO("Validation Succeed！")
 }

@@ -20,7 +20,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	va := adapter.NewValidator("sss")
+	va := adapter.NewValidator(cfg.Bot.AppSecret)
 	bot, err := goqqrobot.New(*cfg, *va)
 	if err != nil {
 		return
