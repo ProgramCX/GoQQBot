@@ -29,11 +29,11 @@ const (
 // EventIds
 // reference: https://bot.q.qq.com/wiki/develop/api-v2/server-inter/message/send-receive/send.html
 const (
-	INTERACTION_CREATE EventId = "INTERACTION_CREATE"
-	C2C_MSG_RECEIVE    EventId = "C2C_MSG_RECEIVE"
-	FRIEND_ADD         EventId = "FRIEND_ADD"
-	GROUP_ADD_ROBOT    EventId = "GROUP_ADD_ROBOT"
-	GROUP_MSG_RECEIVE  EventId = "GROUP_MSG_RECEIVE"
+	INTERACTION_CREATE      EventId = "INTERACTION_CREATE"
+	C2C_MSG_RECEIVE         EventId = "C2C_MSG_RECEIVE"
+	FRIEND_ADD              EventId = "FRIEND_ADD"
+	GROUP_ADD_ROBOT         EventId = "GROUP_ADD_ROBOT"
+	GROUP_AT_MESSAGE_CREATE EventId = "GROUP_AT_MESSAGE_CREATE"
 )
 
 type CommonSendMessage struct {
@@ -59,7 +59,7 @@ type PrivateSendMessage struct {
 
 func (e GroupEventId) Valid() bool {
 	switch e {
-	case GroupEventId(GROUP_ADD_ROBOT), GroupEventId(GROUP_MSG_RECEIVE), GroupEventId(INTERACTION_CREATE):
+	case GroupEventId(GROUP_ADD_ROBOT), GroupEventId(GROUP_AT_MESSAGE_CREATE), GroupEventId(INTERACTION_CREATE):
 		return true
 	default:
 		return false

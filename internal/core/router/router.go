@@ -31,6 +31,7 @@ func New() *CommandRouter {
 }
 
 func (c *CommandRouter) OnCommand(cmd string, eventId message.EventId, handler Handler) {
+
 	cmd = strings.TrimPrefix(cmd, "/")
 	cr := RoutePair{
 		cmd:     cmd,
@@ -56,7 +57,7 @@ func (c *CommandRouter) Handle(task *typesShared.Task) {
 	}
 
 	//See:https://bot.q.qq.com/wiki/develop/api-v2/server-inter/message/send-receive/event.html
-	content := msg.Content
+	content := strings.TrimSpace(msg.Content)
 
 	if !strings.HasPrefix(content, "/") {
 		logger.DEBUG("Message does not have prefix '/', use default handler. Context: %s", task.Payload)
@@ -95,6 +96,7 @@ func (c *CommandRouter) Handle(task *typesShared.Task) {
 
 	if !ok {
 		logger.WARN("Unknown command: /%s (event: %s)", cmd, pr.eventId)
+		logger.DEBUG("Exisiting handlers: %+v", c.handlers)
 		return
 	}
 

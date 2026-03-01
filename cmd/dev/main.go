@@ -9,7 +9,10 @@ import (
 
 	"github.com/ProgramCX/GoQQBot/internal/adapter"
 	"github.com/ProgramCX/GoQQBot/internal/foundation/config"
+	"github.com/ProgramCX/GoQQBot/internal/foundation/logger"
+	"github.com/ProgramCX/GoQQBot/internal/foundation/message"
 	"github.com/ProgramCX/GoQQBot/pkg/goqqrobot"
+	"github.com/ProgramCX/GoQQBot/shared/types"
 )
 
 func main() {
@@ -25,6 +28,12 @@ func main() {
 	if err != nil {
 		return
 	}
+
+	bot.OnCommand("/v", message.GROUP_AT_MESSAGE_CREATE, func(ctx *types.Context) error {
+		// 处理 /info 命令
+		logger.INFO("收到 /v 命令")
+		return nil
+	})
 	if err := bot.StartWithGracefulShutdown(); err != nil {
 		if !errors.Is(err, http.ErrServerClosed) {
 			log.Fatal(err)
