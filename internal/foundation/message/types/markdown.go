@@ -1,9 +1,9 @@
 package types
 
 type Markdown struct {
-	Content          string           `json:"content" validate:"omitempty"`
-	CustomTemplateId string           `json:"custom_template_id" validate:"omitempty"`
-	Params           []MarkdownParams `json:"params" validate:"omitempty"`
+	Content          string           `json:"content,omitempty" validate:"omitempty"`
+	CustomTemplateId string           `json:"custom_template_id,omitempty" validate:"omitempty"`
+	Params           []MarkdownParams `json:"params,omitempty" validate:"omitempty"`
 }
 
 type MarkdownParams struct {

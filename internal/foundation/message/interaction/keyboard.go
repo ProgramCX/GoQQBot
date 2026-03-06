@@ -46,7 +46,7 @@ type ButtonAction struct {
 	// 0 http or mini program scheme
 	// 1 callback backend interface, data passed to backend
 	// 2 command: insert @bot data in input
-	Type ActionType `json:"types"`
+	Type ActionType `json:"type"`
 
 	Permission ButtonPermission `json:"permission"`
 
@@ -86,7 +86,7 @@ type ButtonPermission struct {
 	// 1 admin only
 	// 2 everyone
 	// 3 specific role (channel only)
-	Type PermissionType `json:"types"`
+	Type PermissionType `json:"type"`
 
 	SpecifyUserIDs []string `json:"specify_user_ids,omitempty"`
 
@@ -110,7 +110,7 @@ type InteractionCreateEvent struct {
 	// Type:
 	// 11 Button
 	// 12 Menu
-	Type InteractionType `json:"types"`
+	Type InteractionType `json:"type"`
 
 	// Scene: c2c, group, guild
 	Scene InteractionScene `json:"scene"`
@@ -164,7 +164,7 @@ const (
 type InteractionData struct {
 	Resolved InteractionResolved `json:"resolved"`
 	// Type: same as outer Type
-	Type InteractionType `json:"types,omitempty"`
+	Type InteractionType `json:"type,omitempty"`
 }
 
 type InteractionResolved struct {

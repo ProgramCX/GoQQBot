@@ -7,9 +7,9 @@ type Ark struct {
 	// 23 Link + Text List Template
 	// 24 Text + Thumbnail Template
 	// 37 Big Image Template
-	TemplateID int `json:"template_id"`
+	TemplateID int `json:"template_id,omitempty"`
 	// KV: Key-Value pair list
-	KV []ArkKV `json:"kv"`
+	KV []ArkKV `json:"kv,omitempty"`
 }
 
 type ArkKV struct {

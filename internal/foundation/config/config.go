@@ -26,7 +26,7 @@ type ServerPool struct {
 
 // Bot bot
 type Bot struct {
-	AppId     int32  `yaml:"appId"`
+	AppId     string `yaml:"appId"`
 	Token     string `yaml:"token"`
 	AppSecret string `yaml:"appSecret"`
 }

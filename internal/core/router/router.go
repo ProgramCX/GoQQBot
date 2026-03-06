@@ -46,6 +46,18 @@ func (c *CommandRouter) OnCommand(cmd string, eventId message.EventId, handler H
 	logger.INFO("Registered Command: %s, %s", cmd, eventId)
 }
 
+func (c *CommandRouter) OnEvent(eventId message.EventId, handler Handler) {
+	cr := RoutePair{
+		cmd:     "",
+		eventId: eventId,
+	}
+	if handler == nil {
+		logger.ERROR("Error in register event: %s", eventId)
+	}
+	c.handlers[cr] = handler
+	logger.INFO("Registered Event: %s", eventId)
+}
+
 func (c *CommandRouter) Handle(task *typesShared.Task) {
 	var msg struct {
 		Content string `json:"content"`
@@ -59,7 +71,7 @@ func (c *CommandRouter) Handle(task *typesShared.Task) {
 	//See:https://bot.q.qq.com/wiki/develop/api-v2/server-inter/message/send-receive/event.html
 	content := strings.TrimSpace(msg.Content)
 
-	if !strings.HasPrefix(content, "/") {
+	if !strings.HasPrefix(content, "/") && strings.TrimSpace(content) != "" {
 		logger.DEBUG("Message does not have prefix '/', use default handler. Context: %s", task.Payload)
 
 		if c.defaultHandler == nil {
@@ -82,10 +94,10 @@ func (c *CommandRouter) Handle(task *typesShared.Task) {
 
 	cmd, args := parseCommand(content)
 
-	if cmd == "" {
-		logger.WARN("Empty Command")
-		return
-	}
+	//if cmd == "" {
+	//	logger.WARN("Empty Command")
+	//	return
+	//}
 
 	pr := RoutePair{
 		cmd:     cmd,

@@ -51,7 +51,7 @@ func DefaultConfig() *Config {
 		QueueSize: 1000,
 	}
 	cBot := Bot{
-		AppId:     0,
+		AppId:     "",
 		Token:     "",
 		AppSecret: "",
 	}
@@ -89,7 +89,7 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("bot token is required")
 	}
 
-	if c.Bot.AppId == 0 {
+	if c.Bot.AppId == "" {
 		return fmt.Errorf("appId is required")
 	}
 

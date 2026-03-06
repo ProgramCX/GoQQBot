@@ -25,7 +25,7 @@ type ReactionTarget struct {
 	// 1 Feed
 	// 2 Comment
 	// 3 Reply
-	Type ReactionTargetType `json:"types"`
+	Type ReactionTargetType `json:"type"`
 }
 
 type Emoji struct {
@@ -33,7 +33,7 @@ type Emoji struct {
 	// Type:
 	// 1 System Emoji
 	// 2 Custom Emoji
-	Type EmojiType `json:"types"`
+	Type EmojiType `json:"type"`
 }
 
 type ReactionTargetType int

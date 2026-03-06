@@ -25,7 +25,8 @@ type CommonReceiveMessage struct {
 
 type GroupReceiveMessage struct {
 	CommonReceiveMessage
-	Author MemberAuthor `json:"author"`
+	Author      MemberAuthor `json:"author"`
+	GroupOpenid string       `json:"group_openid"`
 }
 
 type PrivateReceiveMessage struct {
