@@ -28,6 +28,7 @@ type Bot struct {
 }
 
 func New(cfg config.Config, validator adapter.Validator) (*Bot, error) {
+	ascii.PrintLogo()
 	b := &Bot{
 		config: cfg,
 	}
@@ -51,18 +52,35 @@ func New(cfg config.Config, validator adapter.Validator) (*Bot, error) {
 	return b, nil
 }
 
+func NewBot(configPath string) (*Bot, error) {
+	cfg, err := config.LoadConfig(configPath)
+	if err != nil {
+		return nil, err
+	}
+
+	va := adapter.NewValidator(cfg.Bot.AppSecret)
+	bot, err := New(*cfg, *va)
+	if err != nil {
+		return nil, err
+	}
+
+	return bot, nil
+}
+
 func (b *Bot) OnCommand(cmd string, eventID message.EventId, handler router.Handler) {
 
 	b.router.OnCommand(cmd, eventID, handler)
 }
 
+func (b *Bot) OnEvent(eventID message.EventId, handler router.Handler) {
+	b.router.OnEvent(eventID, handler)
+}
+
 func (b *Bot) Start() error {
-	ascii.PrintLogo()
 	return b.adapter.Start()
 }
 
 func (b *Bot) StartWithGracefulShutdown() error {
-	ascii.PrintLogo()
 	go func() {
 		if err := b.adapter.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			logger.ERROR("Webhook server error: %v", err)

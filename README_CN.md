@@ -1,0 +1,287 @@
+# GoQQBot
+
+<p align="center">
+  <a href="README.md">English</a> | <a href="README_CN.md">简体中文</a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Go-1.24+-00ADD8?style=flat&logo=go" alt="Go Version">
+  <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License">
+</p>
+
+一个用 Go 语言编写的轻量级 QQ 机器人框架，基于 QQ Bot API v2 开发，支持 Webhook 方式接收消息，提供命令路由、事件处理和多种消息类型支持。
+
+```
+   ______          ____    ____     ____           __
+  / ____/  ____   / __ \  / __ \   / __ )  ____   / /_
+ / / __   / __ \ / / / / / / / /  / __  | / __ \ / __/
+/ /_/ /  / /_/ // /_/ / / /_/ /  / /_/ / / /_/ // /_
+\____/   \____/ \___\_\ \___\_\ /_____/  \____/ \__/
+```
+
+## ✨ 特性
+
+-  **轻量高效** - 基于 Go 语言，性能优异，资源占用低
+- **Webhook 支持** - 基于 HTTP Webhook 接收消息，支持 Ed25519 签名验证
+- **命令路由** - 灵活的命令注册和路由系统，支持参数解析
+- **消息类型** - 支持文本、Markdown、ARK、富媒体等多种消息类型
+- **群聊 & 私聊** - 同时支持群聊 (@机器人) 和私聊消息处理
+- **事件监听** - 支持好友添加/删除、机器人被拉入/移出群等事件
+- **协程池** - 内置任务队列和协程池，高效处理并发消息
+- **优雅关闭** - 支持信号监听，平滑关闭服务
+
+## 📦 安装
+
+```bash
+go get github.com/ProgramCX/GoQQBot
+```
+
+## 🚀 快速开始
+
+### 1. 创建配置文件
+
+创建 `config.yaml` 文件：
+
+```yaml
+server:
+  port: 8080
+  host: "0.0.0.0"
+  pool:
+    workers: 10      # 工作协程数
+    queueSize: 100   # 任务队列大小
+
+bot:
+  appId: "your-app-id"
+  token: "your-bot-token"
+  appSecret: "your-app-secret"
+```
+
+> 💡 获取 Bot 配置信息，请前往 [QQ 开放平台](https://q.qq.com/qqbot/)
+
+### 2. 编写你的机器人
+
+```go
+package main
+
+import (
+    "errors"
+    "log"
+    "net/http"
+    "path/filepath"
+    "runtime"
+
+    "github.com/ProgramCX/GoQQBot/internal/core/api/c2c"
+    "github.com/ProgramCX/GoQQBot/internal/core/api/group"
+    "github.com/ProgramCX/GoQQBot/internal/foundation/logger"
+    "github.com/ProgramCX/GoQQBot/internal/foundation/message"
+    "github.com/ProgramCX/GoQQBot/pkg/goqqrobot"
+    "github.com/ProgramCX/GoQQBot/shared/types"
+)
+
+func main() {
+    _, currentFile, _, _ := runtime.Caller(0)
+    configPath := filepath.Join(filepath.Dir(currentFile), "config.yaml")
+
+    // 创建机器人实例
+    bot, err := goqqrobot.NewBot(configPath)
+    if err != nil {
+        logger.ERROR("创建机器人实例失败: %v", err)
+        return
+    }
+
+    // 注册群聊命令
+    bot.OnCommand("hello", message.GROUP_AT_MESSAGE_CREATE, func(ctx *types.Context) error {
+        err := group.ReplyPlainText(ctx, "你好，"+ctx.Args[0], configPath)
+        if err != nil {
+            logger.ERROR("回复失败: %v", err)
+        }
+        return nil
+    })
+
+    // 注册私聊命令
+    bot.OnCommand("hello", message.C2C_MESSAGE_CREATE, func(ctx *types.Context) error {
+        err := c2c.ReplyPlainText(ctx, "你好，"+ctx.Args[0], configPath)
+        if err != nil {
+            logger.ERROR("回复失败: %v", err)
+        }
+        return nil
+    })
+
+    // 监听好友添加事件
+    bot.OnEvent(message.FRIEND_ADD, func(ctx *types.Context) error {
+        logger.INFO("收到好友添加请求")
+        return nil
+    })
+
+    // 启动机器人（支持优雅关闭）
+    if err := bot.StartWithGracefulShutdown(); err != nil {
+        if !errors.Is(err, http.ErrServerClosed) {
+            log.Fatal(err)
+        }
+    }
+}
+```
+
+### 3. 运行
+
+```bash
+go run main.go
+```
+
+## 📚 API 文档
+
+### 机器人实例
+
+```go
+// 从配置文件创建机器人
+bot, err := goqqrobot.NewBot("config.yaml")
+
+// 启动服务
+bot.Start()
+
+// 带优雅关闭的启动
+bot.StartWithGracefulShutdown()
+
+// 停止服务
+bot.Stop()
+```
+
+### 命令注册
+
+```go
+// 注册命令处理器
+bot.OnCommand("cmd", message.GROUP_AT_MESSAGE_CREATE, handler)
+
+// 注册事件处理器
+bot.OnEvent(message.FRIEND_ADD, handler)
+```
+
+### 支持的 Event ID
+
+**私聊事件 (C2C)：**
+| Event ID | 说明 |
+|---------|------|
+| `C2C_MSG_RECEIVE` | 收到私聊消息 |
+| `C2C_MESSAGE_CREATE` | 私聊消息创建 |
+| `FRIEND_ADD` | 好友添加 |
+| `FRIEND_DEL` | 好友删除 |
+| `C2C_MSG_REJECT` | 消息被拒绝 |
+
+**群聊事件：**
+| Event ID | 说明 |
+|---------|------|
+| `GROUP_AT_MESSAGE_CREATE` | 群@消息 |
+| `GROUP_ADD_ROBOT` | 机器人被添加进群 |
+| `GROUP_DEL_ROBOT` | 机器人被移出群 |
+| `GROUP_MSG_RECEIVE` | 收到群消息 |
+| `GROUP_MSG_REJECT` | 群消息被拒绝 |
+
+### 消息发送 API
+
+**群聊消息：**
+```go
+import "github.com/ProgramCX/GoQQBot/internal/core/api/group"
+
+// 发送纯文本
+group.ReplyPlainText(ctx, "消息内容", configPath)
+
+// 发送 Markdown
+group.ReplyMarkdown(ctx, markdownContent, configPath)
+
+// 发送富媒体
+group.ReplyMedia(ctx, fileInfo, configPath)
+```
+
+**私聊消息：**
+```go
+import "github.com/ProgramCX/GoQQBot/internal/core/api/c2c"
+
+// 发送纯文本
+c2c.ReplyPlainText(ctx, "消息内容", configPath)
+
+// 发送 Markdown
+c2c.ReplyMarkdown(ctx, markdownContent, configPath)
+
+// 发送富媒体
+c2c.ReplyMedia(ctx, fileInfo, configPath)
+```
+
+### Context 对象
+
+```go
+type Context struct {
+    Payload    *Payload   // 原始消息负载
+    Command    string     // 命令名（不含/）
+    Args       []string   // 命令参数列表
+    RawMessage string     // 原始消息内容
+}
+```
+
+## 📁 项目结构
+
+```
+GoQQBot/
+├── cmd/                    # 命令行入口
+│   └── dev/
+│       └── main.go         # 开发环境示例
+├── internal/               # 内部代码
+│   ├── adapter/            # Webhook 适配器和验证器
+│   ├── core/               # 核心功能
+│   │   ├── api/            # API 客户端
+│   │   ├── pool/           # 协程池
+│   │   └── router/         # 命令路由器
+│   └── foundation/         # 基础组件
+│       ├── config/         # 配置管理
+│       ├── logger/         # 日志系统
+│       ├── message/        # 消息类型定义
+│       └── signal.go       # 信号处理
+├── pkg/                    # 公开包
+│   └── goqqrobot/          # 机器人核心包
+├── shared/                 # 共享类型
+│   └── types/
+└── config.yaml             # 配置文件示例
+```
+
+## ⚙️ 配置说明
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|-------|------|-------|------|
+| `server.port` | int | 8080 | Webhook 服务端口 |
+| `server.host` | string | "0.0.0.0" | 监听地址 |
+| `server.pool.workers` | int | 10 | 工作协程数 |
+| `server.pool.queueSize` | int | 100 | 任务队列大小 |
+| `bot.appId` | string | - | QQ Bot App ID |
+| `bot.token` | string | - | QQ Bot Token |
+| `bot.appSecret` | string | - | QQ Bot App Secret |
+
+## 🔒 Webhook 配置
+
+在 [QQ 开放平台](https://q.qq.com/qqbot/#/developer/webhook-setting) 配置 Webhook：
+
+- **URL**: `http://your-domain:port/webhook`
+- **验证方式**: 选择 Ed25519 签名验证
+
+框架会自动处理验证请求和消息签名验证。
+
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+1. Fork 本仓库
+2. 创建你的特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交你的修改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 打开一个 Pull Request
+
+## 📄 许可证
+
+本项目基于 [MIT](LICENSE) 许可证开源。
+
+## 📖 相关链接
+
+- [QQ Bot API 文档](https://bot.q.qq.com/wiki/develop/api-v2/)
+- [QQ 开放平台](https://q.qq.com/qqbot/)
+
+---
+
+<p align="center">Made with ❤️ by <a href="https://github.com/ProgramCX">ProgramCX</a></p>

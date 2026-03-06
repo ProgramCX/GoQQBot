@@ -9,6 +9,6 @@ server:
     queueSize: 100       # 任务队列长度（建议：workers * 10）
 
 bot:
-  appId: 102883664       # QQ 机器人 AppID（从 QQ 开放平台获取）
-  token: O3sAUggeT3jQLjh4z4VZZD1KDTAoF9mI           # 验证 Token
-  appSecret: aBnP2fJxcHxdK2kTCwgRCykhfdcbbbcd      # App Secret（用于签名验证）
+  appId: "102883664"       # QQ 机器人 AppID（从 QQ 开放平台获取）
+  token: "O3sAUggeT3jQLjh4z4VZZD1KDTAoF9mI"           # 验证 Token
+  appSecret: "aBnP2fJxcHxdK2kTCwgRCykhfdcbbbcd"      # App Secret（用于签名验证）
