@@ -1,4 +1,4 @@
-// Copyright 2026 ProgramCX. All rights reserved.
+﻿// Copyright 2026 ProgramCX. All rights reserved.
 // Use of this source code is governed by a MIT license
 // that can be found in the LICENSE file.
 
@@ -10,29 +10,30 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/ProgramCX/GoQQBot/internal/core/api"
+	"github.com/ProgramCX/GoQQBot/pkg/api"
 	"github.com/ProgramCX/GoQQBot/pkg/message/interaction"
+	"github.com/ProgramCX/GoQQBot/shared/types"
 )
 
-func AddReaction(channelId string, messageId string, emojiType interaction.EmojiType, emojiId string, configPath string) error {
+func AddReaction(c *types.Context, channelId string, messageId string, emojiType interaction.EmojiType, emojiId string) error {
 	path := fmt.Sprintf(api.CHANNEL_EMOJI, channelId, messageId, strconv.Itoa(int(emojiType)), emojiId)
-	_, err := api.NewClient(configPath).Put(context.Background(), path, nil)
+	_, err := c.Client.Request(context.Background(), "PUT", path, nil)
 	if err != nil {
 		return fmt.Errorf("add reaction failed: %w", err)
 	}
 	return nil
 }
 
-func RemoveReaction(channelId string, messageId string, emojiType interaction.EmojiType, emojiId string, configPath string) error {
+func RemoveReaction(c *types.Context, channelId string, messageId string, emojiType interaction.EmojiType, emojiId string) error {
 	path := fmt.Sprintf(api.CHANNEL_EMOJI, channelId, messageId, strconv.Itoa(int(emojiType)), emojiId)
-	_, err := api.NewClient(configPath).Delete(context.Background(), path)
+	_, err := c.Client.Request(context.Background(), "DELETE", path, nil)
 	if err != nil {
 		return fmt.Errorf("remove reaction failed: %w", err)
 	}
 	return nil
 }
 
-func GetReactionUsers(channelId string, messageId string, emojiType interaction.EmojiType, emojiId string, cookie string, limit int, configPath string) (*interaction.GetReactionUsersResponse, error) {
+func GetReactionUsers(c *types.Context, channelId string, messageId string, emojiType interaction.EmojiType, emojiId string, cookie string, limit int) (*interaction.GetReactionUsersResponse, error) {
 	path := fmt.Sprintf(api.CHANNEL_EMOJI, channelId, messageId, strconv.Itoa(int(emojiType)), emojiId)
 	sep := "?"
 	if cookie != "" {
@@ -42,7 +43,7 @@ func GetReactionUsers(channelId string, messageId string, emojiType interaction.
 	if limit > 0 {
 		path += sep + "limit=" + strconv.Itoa(limit)
 	}
-	data, err := api.NewClient(configPath).Get(context.Background(), path)
+	data, err := c.Client.Get(context.Background(), path)
 	if err != nil {
 		return nil, fmt.Errorf("get reaction users failed: %w", err)
 	}
@@ -52,3 +53,4 @@ func GetReactionUsers(channelId string, messageId string, emojiType interaction.
 	}
 	return &resp, nil
 }
+

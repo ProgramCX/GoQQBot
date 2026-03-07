@@ -17,7 +17,6 @@ import (
 	"time"
 
 	"github.com/ProgramCX/GoQQBot/internal/foundation/logger"
-	"github.com/ProgramCX/GoQQBot/pkg/config"
 )
 
 const (
@@ -35,15 +34,7 @@ type Client struct {
 	httpClient  *http.Client
 }
 
-func NewClient(configPath string) *Client {
-	loadConfig, err := config.LoadConfig(configPath)
-	if err != nil {
-		return nil
-	}
-	return newClient(loadConfig.Bot.AppId, loadConfig.Bot.AppSecret)
-}
-
-func newClient(appID, appSecret string) *Client {
+func NewClient(appID, appSecret string) *Client {
 	return &Client{
 		appID:     appID,
 		appSecret: appSecret,

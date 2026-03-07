@@ -84,6 +84,7 @@ func (c *CommandRouter) Handle(task *typesShared.Task) {
 			Command:    "",
 			RawMessage: content,
 			Args:       make([]string, 0),
+			Client:     task.Client,
 		}
 
 		if err := c.defaultHandler(&ctx); err != nil {
@@ -121,6 +122,7 @@ func (c *CommandRouter) Handle(task *typesShared.Task) {
 		Args:       args,
 		RawMessage: content,
 		Payload:    task.Payload,
+		Client:     task.Client,
 	}
 
 	if err := handler(&ctx); err != nil {

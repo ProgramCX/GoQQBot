@@ -70,17 +70,23 @@ import (
     "path/filepath"
     "runtime"
 
-    "github.com/ProgramCX/GoQQBot/internal/core/api/c2c"
-    "github.com/ProgramCX/GoQQBot/internal/core/api/group"
     "github.com/ProgramCX/GoQQBot/internal/foundation/logger"
-    "github.com/ProgramCX/GoQQBot/internal/foundation/message"
+    "github.com/ProgramCX/GoQQBot/pkg/api/c2c"
+    "github.com/ProgramCX/GoQQBot/pkg/api/group"
+    "github.com/ProgramCX/GoQQBot/pkg/message"
     "github.com/ProgramCX/GoQQBot/pkg/goqqrobot"
     "github.com/ProgramCX/GoQQBot/shared/types"
 )
 
 func main() {
+    // 开发环境使用以下代码
     _, currentFile, _, _ := runtime.Caller(0)
     configPath := filepath.Join(filepath.Dir(currentFile), "config.yaml")
+
+    // 生产环境使用以下代码
+	//exePath, _ := os.Executable()
+	//exeDir := filepath.Dir(exePath)
+	//configPath := filepath.Join(exeDir, "config.yaml")
 
     // 创建机器人实例
     bot, err := goqqrobot.NewBot(configPath)
@@ -91,7 +97,7 @@ func main() {
 
     // 注册群聊命令
     bot.OnCommand("hello", message.GROUP_AT_MESSAGE_CREATE, func(ctx *types.Context) error {
-        err := group.ReplyPlainText(ctx, "你好，"+ctx.Args[0], configPath)
+        err := group.ReplyPlainText(ctx, "你好，"+ctx.Args[0])
         if err != nil {
             logger.ERROR("回复失败: %v", err)
         }
@@ -100,7 +106,7 @@ func main() {
 
     // 注册私聊命令
     bot.OnCommand("hello", message.C2C_MESSAGE_CREATE, func(ctx *types.Context) error {
-        err := c2c.ReplyPlainText(ctx, "你好，"+ctx.Args[0], configPath)
+        err := c2c.ReplyPlainText(ctx, "你好，"+ctx.Args[0])
         if err != nil {
             logger.ERROR("回复失败: %v", err)
         }
@@ -180,21 +186,21 @@ bot.OnEvent(message.FRIEND_ADD, handler)
 
 **群聊消息：**
 ```go
-import "github.com/ProgramCX/GoQQBot/internal/core/api/group"
+import "github.com/ProgramCX/GoQQBot/pkg/api/group"
 
 // 发送纯文本
-group.ReplyPlainText(ctx, "消息内容", configPath)
+group.ReplyPlainText(ctx, "消息内容")
 
 // 发送 Markdown
-group.ReplyMarkdown(ctx, markdownContent, configPath)
+group.ReplyMarkdownContent(ctx, markdownContent)
 
 // 发送富媒体
-group.ReplyMedia(ctx, fileInfo, configPath)
+group.ReplyMedia(ctx, fileInfo)
 ```
 
 **私聊消息：**
 ```go
-import "github.com/ProgramCX/GoQQBot/internal/core/api/c2c"
+import "github.com/ProgramCX/GoQQBot/pkg/api/c2c"
 
 // 发送纯文本
 c2c.ReplyPlainText(ctx, "消息内容", configPath)
@@ -227,16 +233,21 @@ GoQQBot/
 ├── internal/               # 内部代码
 │   ├── adapter/            # Webhook 适配器和验证器
 │   ├── core/               # 核心功能
-│   │   ├── api/            # API 客户端
+│   │   ├── api/            # API 客户端（内部）
 │   │   ├── pool/           # 协程池
 │   │   └── router/         # 命令路由器
 │   └── foundation/         # 基础组件
-│       ├── config/         # 配置管理
+│       ├── config/         # 配置管理（已移至pkg/）
 │       ├── logger/         # 日志系统
-│       ├── message/        # 消息类型定义
 │       └── signal.go       # 信号处理
 ├── pkg/                    # 公开包
-│   └── goqqrobot/          # 机器人核心包
+│   ├── api/                # 公开 API 客户端
+│   │   ├── c2c/            # 私聊消息 API
+│   │   ├── channel/        # 频道 API
+│   │   └── group/          # 群聊消息 API
+│   ├── config/             # 配置管理
+│   ├── goqqrobot/          # 机器人核心包
+│   └── message/            # 消息类型和工具
 ├── shared/                 # 共享类型
 │   └── types/
 └── config.yaml             # 配置文件示例

@@ -4,9 +4,12 @@
 
 package types
 
+import "github.com/ProgramCX/GoQQBot/pkg/api"
+
 type Context struct {
 	Payload    *Payload
 	Command    string
 	Args       []string
 	RawMessage string
+	Client     *api.Client
 }

@@ -1,4 +1,4 @@
-// Copyright 2026 ProgramCX. All rights reserved.
+﻿// Copyright 2026 ProgramCX. All rights reserved.
 // Use of this source code is governed by a MIT license
 // that can be found in the LICENSE file.
 
@@ -9,18 +9,19 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/ProgramCX/GoQQBot/internal/core/api"
+	"github.com/ProgramCX/GoQQBot/pkg/api"
 	"github.com/ProgramCX/GoQQBot/internal/foundation/logger"
 	"github.com/ProgramCX/GoQQBot/pkg/message"
 	channelMsg "github.com/ProgramCX/GoQQBot/pkg/message/channel"
 	"github.com/ProgramCX/GoQQBot/pkg/message/interaction"
 	typesMessage "github.com/ProgramCX/GoQQBot/pkg/message/types"
+	"github.com/ProgramCX/GoQQBot/shared/types"
 )
 
-func sendToChannel(channelId string, body *channelMsg.ChannelSendMessage, configPath string) (*message.SendMessageResponse, error) {
+func sendToChannel(c *types.Context, channelId string, body *channelMsg.ChannelSendMessage) (*message.SendMessageResponse, error) {
 	path := fmt.Sprintf(api.CHANNEL_SEND_MESSAGE, channelId)
 	logger.DEBUG("send channel message to %s: %+v", channelId, body)
-	data, err := api.NewClient(configPath).Post(context.Background(), path, body)
+	data, err := c.Client.Post(context.Background(), path, body)
 	if err != nil {
 		return nil, fmt.Errorf("send channel message failed: %w", err)
 	}
@@ -31,10 +32,10 @@ func sendToChannel(channelId string, body *channelMsg.ChannelSendMessage, config
 	return &resp, nil
 }
 
-func sendToDM(guildId string, body *channelMsg.ChannelSendMessage, configPath string) (*message.SendMessageResponse, error) {
+func sendToDM(c *types.Context, guildId string, body *channelMsg.ChannelSendMessage) (*message.SendMessageResponse, error) {
 	path := fmt.Sprintf(api.CHANNEL_PRIVATE_MESSAGE, guildId)
 	logger.DEBUG("send DM to guild %s: %+v", guildId, body)
-	data, err := api.NewClient(configPath).Post(context.Background(), path, body)
+	data, err := c.Client.Post(context.Background(), path, body)
 	if err != nil {
 		return nil, fmt.Errorf("send DM failed: %w", err)
 	}
@@ -45,33 +46,33 @@ func sendToDM(guildId string, body *channelMsg.ChannelSendMessage, configPath st
 	return &resp, nil
 }
 
-func SendMessage(channelId string, msg *channelMsg.ChannelSendMessage, configPath string) (*message.SendMessageResponse, error) {
-	return sendToChannel(channelId, msg, configPath)
+func SendMessage(c *types.Context, channelId string, msg *channelMsg.ChannelSendMessage) (*message.SendMessageResponse, error) {
+	return sendToChannel(c, channelId, msg)
 }
 
-func SendDM(guildId string, msg *channelMsg.ChannelSendMessage, configPath string) (*message.SendMessageResponse, error) {
-	return sendToDM(guildId, msg, configPath)
+func SendDM(c *types.Context, guildId string, msg *channelMsg.ChannelSendMessage) (*message.SendMessageResponse, error) {
+	return sendToDM(c, guildId, msg)
 }
 
-func SendPlainText(channelId string, content string, msgId string, configPath string) (*message.SendMessageResponse, error) {
+func SendPlainText(c *types.Context, channelId string, content string, msgId string) (*message.SendMessageResponse, error) {
 	body := &channelMsg.ChannelSendMessage{Content: content, MsgId: msgId}
-	return sendToChannel(channelId, body, configPath)
+	return sendToChannel(c, channelId, body)
 }
 
-func SendDMPlainText(guildId string, content string, msgId string, configPath string) (*message.SendMessageResponse, error) {
+func SendDMPlainText(c *types.Context, guildId string, content string, msgId string) (*message.SendMessageResponse, error) {
 	body := &channelMsg.ChannelSendMessage{Content: content, MsgId: msgId}
-	return sendToDM(guildId, body, configPath)
+	return sendToDM(c, guildId, body)
 }
 
-func SendMarkdownContent(channelId string, content string, msgId string, configPath string) (*message.SendMessageResponse, error) {
+func SendMarkdownContent(c *types.Context, channelId string, content string, msgId string) (*message.SendMessageResponse, error) {
 	body := &channelMsg.ChannelSendMessage{
 		Markdown: &typesMessage.Markdown{Content: content},
 		MsgId:    msgId,
 	}
-	return sendToChannel(channelId, body, configPath)
+	return sendToChannel(c, channelId, body)
 }
 
-func SendMarkdownTemplate(channelId string, templateId string, params []typesMessage.MarkdownParams, msgId string, configPath string) (*message.SendMessageResponse, error) {
+func SendMarkdownTemplate(c *types.Context, channelId string, templateId string, params []typesMessage.MarkdownParams, msgId string) (*message.SendMessageResponse, error) {
 	body := &channelMsg.ChannelSendMessage{
 		Markdown: &typesMessage.Markdown{
 			CustomTemplateId: templateId,
@@ -79,10 +80,10 @@ func SendMarkdownTemplate(channelId string, templateId string, params []typesMes
 		},
 		MsgId: msgId,
 	}
-	return sendToChannel(channelId, body, configPath)
+	return sendToChannel(c, channelId, body)
 }
 
-func SendMarkdownWithKeyboard(channelId string, md *typesMessage.Markdown, kb *interaction.Keyboard, msgId string, configPath string) (*message.SendMessageResponse, error) {
+func SendMarkdownWithKeyboard(c *types.Context, channelId string, md *typesMessage.Markdown, kb *interaction.Keyboard, msgId string) (*message.SendMessageResponse, error) {
 	if md == nil {
 		return nil, fmt.Errorf("markdown is required when sending keyboard")
 	}
@@ -90,10 +91,10 @@ func SendMarkdownWithKeyboard(channelId string, md *typesMessage.Markdown, kb *i
 		return nil, fmt.Errorf("keyboard is required")
 	}
 	body := &channelMsg.ChannelSendMessage{Markdown: md, Keyboard: kb, MsgId: msgId}
-	return sendToChannel(channelId, body, configPath)
+	return sendToChannel(c, channelId, body)
 }
 
-func SendDMMarkdownWithKeyboard(guildId string, md *typesMessage.Markdown, kb *interaction.Keyboard, msgId string, configPath string) (*message.SendMessageResponse, error) {
+func SendDMMarkdownWithKeyboard(c *types.Context, guildId string, md *typesMessage.Markdown, kb *interaction.Keyboard, msgId string) (*message.SendMessageResponse, error) {
 	if md == nil {
 		return nil, fmt.Errorf("markdown is required when sending keyboard")
 	}
@@ -101,45 +102,46 @@ func SendDMMarkdownWithKeyboard(guildId string, md *typesMessage.Markdown, kb *i
 		return nil, fmt.Errorf("keyboard is required")
 	}
 	body := &channelMsg.ChannelSendMessage{Markdown: md, Keyboard: kb, MsgId: msgId}
-	return sendToDM(guildId, body, configPath)
+	return sendToDM(c, guildId, body)
 }
 
-func SendArk(channelId string, ark *typesMessage.Ark, msgId string, configPath string) (*message.SendMessageResponse, error) {
+func SendArk(c *types.Context, channelId string, ark *typesMessage.Ark, msgId string) (*message.SendMessageResponse, error) {
 	if ark == nil {
 		return nil, fmt.Errorf("ark is required")
 	}
 	body := &channelMsg.ChannelSendMessage{Ark: ark, MsgId: msgId}
-	return sendToChannel(channelId, body, configPath)
+	return sendToChannel(c, channelId, body)
 }
 
-func SendEmbed(channelId string, embed *channelMsg.MessageEmbed, msgId string, configPath string) (*message.SendMessageResponse, error) {
+func SendEmbed(c *types.Context, channelId string, embed *channelMsg.MessageEmbed, msgId string) (*message.SendMessageResponse, error) {
 	if embed == nil {
 		return nil, fmt.Errorf("embed is required")
 	}
 	body := &channelMsg.ChannelSendMessage{Embed: embed, MsgId: msgId}
-	return sendToChannel(channelId, body, configPath)
+	return sendToChannel(c, channelId, body)
 }
 
-func RecallChannelMessage(channelId string, messageId string, hideTip bool, configPath string) error {
+func RecallChannelMessage(c *types.Context, channelId string, messageId string, hideTip bool) error {
 	path := fmt.Sprintf(api.CHANNEL_DELETE_MESSAGE, channelId, messageId)
 	if hideTip {
 		path += "?hidetip=true"
 	}
-	_, err := api.NewClient(configPath).Delete(context.Background(), path)
+	_, err := c.Client.Request(context.Background(), "DELETE", path, nil)
 	if err != nil {
 		return fmt.Errorf("recall channel message failed: %w", err)
 	}
 	return nil
 }
 
-func RecallDM(guildId string, messageId string, hideTip bool, configPath string) error {
+func RecallDM(c *types.Context, guildId string, messageId string, hideTip bool) error {
 	path := fmt.Sprintf(api.CHANNEL_PRIVATE_DELETE, guildId, messageId)
 	if hideTip {
 		path += "?hidetip=true"
 	}
-	_, err := api.NewClient(configPath).Delete(context.Background(), path)
+	_, err := c.Client.Request(context.Background(), "DELETE", path, nil)
 	if err != nil {
 		return fmt.Errorf("recall DM failed: %w", err)
 	}
 	return nil
 }
+

@@ -4,10 +4,15 @@
 
 package types
 
-import "context"
+import (
+	"context"
+
+	"github.com/ProgramCX/GoQQBot/pkg/api"
+)
 
 type Task struct {
 	Ctx     context.Context
 	Payload *Payload
 	Done    func()
+	Client  *api.Client
 }

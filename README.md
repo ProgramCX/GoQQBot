@@ -70,17 +70,23 @@ import (
     "path/filepath"
     "runtime"
 
-    "github.com/ProgramCX/GoQQBot/internal/core/api/c2c"
-    "github.com/ProgramCX/GoQQBot/internal/core/api/group"
     "github.com/ProgramCX/GoQQBot/internal/foundation/logger"
-    "github.com/ProgramCX/GoQQBot/internal/foundation/message"
+    "github.com/ProgramCX/GoQQBot/pkg/api/c2c"
+    "github.com/ProgramCX/GoQQBot/pkg/api/group"
+    "github.com/ProgramCX/GoQQBot/pkg/message"
     "github.com/ProgramCX/GoQQBot/pkg/goqqrobot"
     "github.com/ProgramCX/GoQQBot/shared/types"
 )
 
 func main() {
+	// In development environment
     _, currentFile, _, _ := runtime.Caller(0)
     configPath := filepath.Join(filepath.Dir(currentFile), "config.yaml")
+
+	// In production environment, use the following line instead
+    //exePath, _ := os.Executable()
+	//exeDir := filepath.Dir(exePath)
+	//configPath := filepath.Join(exeDir, "bot.yaml")
 
     // Create bot instance
     bot, err := goqqrobot.NewBot(configPath)
@@ -91,7 +97,7 @@ func main() {
 
     // Register group command
     bot.OnCommand("hello", message.GROUP_AT_MESSAGE_CREATE, func(ctx *types.Context) error {
-        err := group.ReplyPlainText(ctx, "Hello, "+ctx.Args[0], configPath)
+        err := group.ReplyPlainText(ctx, "Hello, "+ctx.Args[0])
         if err != nil {
             logger.ERROR("Reply failed: %v", err)
         }
@@ -100,7 +106,7 @@ func main() {
 
     // Register private chat command
     bot.OnCommand("hello", message.C2C_MESSAGE_CREATE, func(ctx *types.Context) error {
-        err := c2c.ReplyPlainText(ctx, "Hello, "+ctx.Args[0], configPath)
+        err := c2c.ReplyPlainText(ctx, "Hello, "+ctx.Args[0])
         if err != nil {
             logger.ERROR("Reply failed: %v", err)
         }
@@ -180,21 +186,21 @@ bot.OnEvent(message.FRIEND_ADD, handler)
 
 **Group Messages:**
 ```go
-import "github.com/ProgramCX/GoQQBot/internal/core/api/group"
+import "github.com/ProgramCX/GoQQBot/pkg/api/group"
 
 // Send plain text
-group.ReplyPlainText(ctx, "message content", configPath)
+group.ReplyPlainText(ctx, "message content")
 
 // Send Markdown
-group.ReplyMarkdown(ctx, markdownContent, configPath)
+group.ReplyMarkdownContent(ctx, markdownContent)
 
 // Send rich media
-group.ReplyMedia(ctx, fileInfo, configPath)
+group.ReplyMedia(ctx, fileInfo)
 ```
 
 **Private Messages:**
 ```go
-import "github.com/ProgramCX/GoQQBot/internal/core/api/c2c"
+import "github.com/ProgramCX/GoQQBot/pkg/api/c2c"
 
 // Send plain text
 c2c.ReplyPlainText(ctx, "message content", configPath)
@@ -227,16 +233,21 @@ GoQQBot/
 ├── internal/               # Internal code
 │   ├── adapter/            # Webhook adapter and validator
 │   ├── core/               # Core functionality
-│   │   ├── api/            # API clients
+│   │   ├── api/            # API clients (internal)
 │   │   ├── pool/           # Goroutine pool
 │   │   └── router/         # Command router
 │   └── foundation/         # Foundation components
-│       ├── config/         # Configuration management
+│       ├── config/         # Configuration management (moved to pkg/)
 │       ├── logger/         # Logging system
-│       ├── message/        # Message type definitions
 │       └── signal.go       # Signal handling
 ├── pkg/                    # Public packages
-│   └── goqqrobot/          # Bot core package
+│   ├── api/                # Public API clients
+│   │   ├── c2c/            # Private message APIs
+│   │   ├── channel/        # Channel APIs
+│   │   └── group/          # Group message APIs
+│   ├── config/             # Configuration management
+│   ├── goqqrobot/          # Bot core package
+│   └── message/            # Message types and utilities
 ├── shared/                 # Shared types
 │   └── types/
 └── config.yaml             # Example configuration

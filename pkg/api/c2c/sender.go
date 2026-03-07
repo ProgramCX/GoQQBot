@@ -9,8 +9,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/ProgramCX/GoQQBot/internal/core/api"
 	"github.com/ProgramCX/GoQQBot/internal/foundation/logger"
+	"github.com/ProgramCX/GoQQBot/pkg/api"
 	"github.com/ProgramCX/GoQQBot/pkg/message"
 	"github.com/ProgramCX/GoQQBot/pkg/message/interaction"
 	typesMessage "github.com/ProgramCX/GoQQBot/pkg/message/types"
@@ -40,39 +40,39 @@ func buildReply(c *types.Context, msgType message.TypeMessage) (*message.Private
 	}, nil
 }
 
-func send(c *types.Context, body *message.PrivateSendMessage, configPath string) error {
+func send(c *types.Context, body *message.PrivateSendMessage) error {
 	pm, err := GetPrivateReceiveMessage(*c.Payload)
 	if err != nil {
 		return err
 	}
 	path := fmt.Sprintf(api.C2C_SEND_MESSAGE, pm.Author.UserOpenid)
 	logger.DEBUG("send private message: %+v", body)
-	_, err = api.NewClient(configPath).Post(context.Background(), path, body)
+	_, err = c.Client.Post(context.Background(), path, body)
 	if err != nil {
 		return fmt.Errorf("send private message failed: %w", err)
 	}
 	return nil
 }
 
-func ReplyPlainText(c *types.Context, text string, configPath string) error {
+func ReplyPlainText(c *types.Context, text string) error {
 	body, err := buildReply(c, message.PLAINTEXT)
 	if err != nil {
 		return err
 	}
 	body.Content = text
-	return send(c, body, configPath)
+	return send(c, body)
 }
 
-func ReplyMarkdownContent(c *types.Context, content string, configPath string) error {
+func ReplyMarkdownContent(c *types.Context, content string) error {
 	body, err := buildReply(c, message.MARKDOWN)
 	if err != nil {
 		return err
 	}
 	body.Markdown = &typesMessage.Markdown{Content: content}
-	return send(c, body, configPath)
+	return send(c, body)
 }
 
-func ReplyMarkdownTemplate(c *types.Context, templateId string, params []typesMessage.MarkdownParams, configPath string) error {
+func ReplyMarkdownTemplate(c *types.Context, templateId string, params []typesMessage.MarkdownParams) error {
 	body, err := buildReply(c, message.MARKDOWN)
 	if err != nil {
 		return err
@@ -81,10 +81,10 @@ func ReplyMarkdownTemplate(c *types.Context, templateId string, params []typesMe
 		CustomTemplateId: templateId,
 		Params:           params,
 	}
-	return send(c, body, configPath)
+	return send(c, body)
 }
 
-func ReplyMarkdownWithKeyboard(c *types.Context, md *typesMessage.Markdown, kb *interaction.Keyboard, configPath string) error {
+func ReplyMarkdownWithKeyboard(c *types.Context, md *typesMessage.Markdown, kb *interaction.Keyboard) error {
 	if md == nil {
 		return fmt.Errorf("markdown is required when sending keyboard")
 	}
@@ -97,10 +97,10 @@ func ReplyMarkdownWithKeyboard(c *types.Context, md *typesMessage.Markdown, kb *
 	}
 	body.Markdown = md
 	body.KeyBoards = kb
-	return send(c, body, configPath)
+	return send(c, body)
 }
 
-func ReplyArk(c *types.Context, ark *typesMessage.Ark, configPath string) error {
+func ReplyArk(c *types.Context, ark *typesMessage.Ark) error {
 	if ark == nil {
 		return fmt.Errorf("ark is required")
 	}
@@ -109,19 +109,19 @@ func ReplyArk(c *types.Context, ark *typesMessage.Ark, configPath string) error 
 		return err
 	}
 	body.Ark = ark
-	return send(c, body, configPath)
+	return send(c, body)
 }
 
-func ReplyMedia(c *types.Context, fileInfo string, configPath string) error {
+func ReplyMedia(c *types.Context, fileInfo string) error {
 	body, err := buildReply(c, message.MEDIA)
 	if err != nil {
 		return err
 	}
 	body.Media = &message.MediaInfo{FileInfo: fileInfo}
-	return send(c, body, configPath)
+	return send(c, body)
 }
 
-func UploadMedia(c *types.Context, fileType message.FileType, url string, srvSendMsg bool, configPath string) (*message.RichMediaResponse, error) {
+func UploadMedia(c *types.Context, fileType message.FileType, url string, srvSendMsg bool) (*message.RichMediaResponse, error) {
 	pm, err := GetPrivateReceiveMessage(*c.Payload)
 	if err != nil {
 		return nil, err
@@ -132,7 +132,7 @@ func UploadMedia(c *types.Context, fileType message.FileType, url string, srvSen
 		URL:        url,
 		SrvSendMsg: srvSendMsg,
 	}
-	data, err := api.NewClient(configPath).Post(context.Background(), path, req)
+	data, err := c.Client.Post(context.Background(), path, req)
 	if err != nil {
 		return nil, fmt.Errorf("upload media failed: %w", err)
 	}
@@ -143,20 +143,20 @@ func UploadMedia(c *types.Context, fileType message.FileType, url string, srvSen
 	return &resp, nil
 }
 
-func RecallMessage(c *types.Context, messageId string, configPath string) error {
+func RecallMessage(c *types.Context, messageId string) error {
 	pm, err := GetPrivateReceiveMessage(*c.Payload)
 	if err != nil {
 		return err
 	}
 	path := fmt.Sprintf(api.C2C_DELETE_MESSAGE, pm.Author.UserOpenid, messageId)
-	_, err = api.NewClient(configPath).Delete(context.Background(), path)
+	_, err = c.Client.Delete(context.Background(), path)
 	if err != nil {
 		return fmt.Errorf("recall private message failed: %w", err)
 	}
 	return nil
 }
 
-func SendWakeup(userOpenid string, text string, msgType message.TypeMessage, configPath string) error {
+func SendWakeup(c *types.Context, userOpenid string, text string, msgType message.TypeMessage) error {
 	body := &message.PrivateSendMessage{
 		CommonSendMessage: message.CommonSendMessage{
 			Content: text,
@@ -166,7 +166,7 @@ func SendWakeup(userOpenid string, text string, msgType message.TypeMessage, con
 	}
 	path := fmt.Sprintf(api.C2C_SEND_MESSAGE, userOpenid)
 	logger.DEBUG("send wakeup message to %s: %+v", userOpenid, body)
-	_, err := api.NewClient(configPath).Post(context.Background(), path, body)
+	_, err := c.Client.Post(context.Background(), path, body)
 	if err != nil {
 		return fmt.Errorf("send wakeup message failed: %w", err)
 	}

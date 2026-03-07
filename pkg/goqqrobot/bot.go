@@ -15,6 +15,7 @@ import (
 	"github.com/ProgramCX/GoQQBot/internal/foundation"
 	"github.com/ProgramCX/GoQQBot/internal/foundation/ascii"
 	"github.com/ProgramCX/GoQQBot/internal/foundation/logger"
+	"github.com/ProgramCX/GoQQBot/pkg/api"
 	"github.com/ProgramCX/GoQQBot/pkg/config"
 	"github.com/ProgramCX/GoQQBot/pkg/message"
 	"github.com/ProgramCX/GoQQBot/shared/types"
@@ -24,16 +25,18 @@ import (
 type Handler = router.Handler
 
 type Bot struct {
-	adapter *adapter.WebhookAdapter
-	pool    *pool.Pool
-	router  *router.CommandRouter
-	config  config.Config
+	adapter   *adapter.WebhookAdapter
+	pool      *pool.Pool
+	router    *router.CommandRouter
+	config    config.Config
+	apiClient *api.Client
 }
 
 func New(cfg config.Config, validator adapter.Validator) (*Bot, error) {
 	ascii.PrintLogo()
 	b := &Bot{
-		config: cfg,
+		config:    cfg,
+		apiClient: api.NewClient(cfg.Bot.AppId, cfg.Bot.AppSecret),
 	}
 
 	b.router = router.New()
@@ -46,6 +49,7 @@ func New(cfg config.Config, validator adapter.Validator) (*Bot, error) {
 			Ctx:     context.Background(),
 			Payload: payload,
 			Done:    func() {},
+			Client:  b.apiClient,
 		}
 		b.pool.Submit(task)
 	}
