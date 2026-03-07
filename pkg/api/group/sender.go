@@ -17,7 +17,7 @@ import (
 	"github.com/ProgramCX/GoQQBot/shared/types"
 )
 
-func getGroupReceiveMessage(payload types.Payload) (*message.GroupReceiveMessage, error) {
+func GetGroupReceiveMessage(payload types.Payload) (*message.GroupReceiveMessage, error) {
 	gm := message.GroupReceiveMessage{}
 	err := json.Unmarshal(payload.D, &gm)
 	if err != nil {
@@ -27,7 +27,7 @@ func getGroupReceiveMessage(payload types.Payload) (*message.GroupReceiveMessage
 }
 
 func buildReply(c *types.Context, msgType message.TypeMessage) (*message.GroupSendMessage, error) {
-	gm, err := getGroupReceiveMessage(*c.Payload)
+	gm, err := GetGroupReceiveMessage(*c.Payload)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func buildReply(c *types.Context, msgType message.TypeMessage) (*message.GroupSe
 }
 
 func send(c *types.Context, body *message.GroupSendMessage, configPath string) error {
-	gm, err := getGroupReceiveMessage(*c.Payload)
+	gm, err := GetGroupReceiveMessage(*c.Payload)
 	if err != nil {
 		return err
 	}
@@ -122,7 +122,7 @@ func ReplyMedia(c *types.Context, fileInfo string, configPath string) error {
 }
 
 func UploadMedia(c *types.Context, fileType message.FileType, url string, srvSendMsg bool, configPath string) (*message.RichMediaResponse, error) {
-	gm, err := getGroupReceiveMessage(*c.Payload)
+	gm, err := GetGroupReceiveMessage(*c.Payload)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +144,7 @@ func UploadMedia(c *types.Context, fileType message.FileType, url string, srvSen
 }
 
 func RecallMessage(c *types.Context, messageId string, configPath string) error {
-	gm, err := getGroupReceiveMessage(*c.Payload)
+	gm, err := GetGroupReceiveMessage(*c.Payload)
 	if err != nil {
 		return err
 	}

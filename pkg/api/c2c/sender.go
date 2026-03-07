@@ -17,7 +17,7 @@ import (
 	"github.com/ProgramCX/GoQQBot/shared/types"
 )
 
-func getPrivateReceiveMessage(payload types.Payload) (*message.PrivateReceiveMessage, error) {
+func GetPrivateReceiveMessage(payload types.Payload) (*message.PrivateReceiveMessage, error) {
 	pm := message.PrivateReceiveMessage{}
 	err := json.Unmarshal(payload.D, &pm)
 	if err != nil {
@@ -27,7 +27,7 @@ func getPrivateReceiveMessage(payload types.Payload) (*message.PrivateReceiveMes
 }
 
 func buildReply(c *types.Context, msgType message.TypeMessage) (*message.PrivateSendMessage, error) {
-	pm, err := getPrivateReceiveMessage(*c.Payload)
+	pm, err := GetPrivateReceiveMessage(*c.Payload)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func buildReply(c *types.Context, msgType message.TypeMessage) (*message.Private
 }
 
 func send(c *types.Context, body *message.PrivateSendMessage, configPath string) error {
-	pm, err := getPrivateReceiveMessage(*c.Payload)
+	pm, err := GetPrivateReceiveMessage(*c.Payload)
 	if err != nil {
 		return err
 	}
@@ -122,7 +122,7 @@ func ReplyMedia(c *types.Context, fileInfo string, configPath string) error {
 }
 
 func UploadMedia(c *types.Context, fileType message.FileType, url string, srvSendMsg bool, configPath string) (*message.RichMediaResponse, error) {
-	pm, err := getPrivateReceiveMessage(*c.Payload)
+	pm, err := GetPrivateReceiveMessage(*c.Payload)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +144,7 @@ func UploadMedia(c *types.Context, fileType message.FileType, url string, srvSen
 }
 
 func RecallMessage(c *types.Context, messageId string, configPath string) error {
-	pm, err := getPrivateReceiveMessage(*c.Payload)
+	pm, err := GetPrivateReceiveMessage(*c.Payload)
 	if err != nil {
 		return err
 	}
