@@ -7,8 +7,8 @@ package message
 import (
 	"fmt"
 
-	"github.com/ProgramCX/GoQQBot/internal/foundation/message/interaction"
-	"github.com/ProgramCX/GoQQBot/internal/foundation/message/types"
+	"github.com/ProgramCX/GoQQBot/pkg/message/interaction"
+	"github.com/ProgramCX/GoQQBot/pkg/message/types"
 )
 
 type TypeMessage int
@@ -17,7 +17,6 @@ type EventId string
 type GroupEventId EventId
 type PrivateEventId EventId
 
-// Message Types
 const (
 	PLAINTEXT TypeMessage = TypeMessage(0)
 	MARKDOWN  TypeMessage = TypeMessage(2)
@@ -26,12 +25,10 @@ const (
 	MEDIA                 = TypeMessage(7)
 )
 
-// EventIds Single Chat (PrivateEventId)
-// reference: https://bot.q.qq.com/wiki/develop/api-v2/server-inter/message/send-receive/send.html
 const (
-	C2C_MSG_RECEIVE    EventId = "C2C_MSG_RECEIVE"    // c2c open message push
-	C2C_MESSAGE_CREATE EventId = "C2C_MESSAGE_CREATE" //c2c message
-	FRIEND_ADD         EventId = "FRIEND_ADD"         //c2c add friend
+	C2C_MSG_RECEIVE    EventId = "C2C_MSG_RECEIVE"
+	C2C_MESSAGE_CREATE EventId = "C2C_MESSAGE_CREATE"
+	FRIEND_ADD         EventId = "FRIEND_ADD"
 	FRIEND_DEL         EventId = "FRIEND_DEL"
 	C2C_MSG_REJECT     EventId = "C2C_MSG_REJECT"
 )
@@ -45,12 +42,10 @@ const (
 	GROUP_AT_MESSAGE_CREATE  EventId = "GROUP_AT_MESSAGE_CREATE"
 )
 
-// MediaInfo represents the media field in send message body for rich media messages.
 type MediaInfo struct {
 	FileInfo string `json:"file_info"`
 }
 
-// SendMessageResponse is the response from sending a message.
 type SendMessageResponse struct {
 	ID        string `json:"id"`
 	Timestamp int64  `json:"timestamp"`
@@ -63,7 +58,7 @@ type CommonSendMessage struct {
 	KeyBoards        *interaction.Keyboard `json:"keyboard,omitempty" validate:"omitempty"`
 	Ark              *types.Ark            `json:"ark,omitempty" validate:"omitempty"`
 	Media            *MediaInfo            `json:"media,omitempty" validate:"omitempty"`
-	MessageReference string                `json:"message_reference,omitempty" validate:"omitempty"` // Not Supported Yet
+	MessageReference string                `json:"message_reference,omitempty" validate:"omitempty"`
 	QQEventID        EventId               `json:"event_id,omitempty" validate:"omitempty"`
 	MsgId            string                `json:"msg_id,omitempty" validate:"omitempty"`
 	MsgSeq           int                   `json:"msg_seq,omitempty" validate:"omitempty"`

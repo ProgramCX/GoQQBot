@@ -7,7 +7,7 @@ package types
 import (
 	"encoding/json"
 
-	"github.com/ProgramCX/GoQQBot/internal/foundation/message"
+	"github.com/ProgramCX/GoQQBot/pkg/message"
 )
 
 var (

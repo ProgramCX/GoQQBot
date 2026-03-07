@@ -14,11 +14,14 @@ import (
 	"github.com/ProgramCX/GoQQBot/internal/core/router"
 	"github.com/ProgramCX/GoQQBot/internal/foundation"
 	"github.com/ProgramCX/GoQQBot/internal/foundation/ascii"
-	"github.com/ProgramCX/GoQQBot/internal/foundation/config"
 	"github.com/ProgramCX/GoQQBot/internal/foundation/logger"
-	"github.com/ProgramCX/GoQQBot/internal/foundation/message"
+	"github.com/ProgramCX/GoQQBot/pkg/config"
+	"github.com/ProgramCX/GoQQBot/pkg/message"
 	"github.com/ProgramCX/GoQQBot/shared/types"
 )
+
+// Handler is the handler function type for bot commands and events.
+type Handler = router.Handler
 
 type Bot struct {
 	adapter *adapter.WebhookAdapter
@@ -67,12 +70,12 @@ func NewBot(configPath string) (*Bot, error) {
 	return bot, nil
 }
 
-func (b *Bot) OnCommand(cmd string, eventID message.EventId, handler router.Handler) {
+func (b *Bot) OnCommand(cmd string, eventID message.EventId, handler Handler) {
 
 	b.router.OnCommand(cmd, eventID, handler)
 }
 
-func (b *Bot) OnEvent(eventID message.EventId, handler router.Handler) {
+func (b *Bot) OnEvent(eventID message.EventId, handler Handler) {
 	b.router.OnEvent(eventID, handler)
 }
 

@@ -16,8 +16,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ProgramCX/GoQQBot/internal/foundation/config"
 	"github.com/ProgramCX/GoQQBot/internal/foundation/logger"
+	"github.com/ProgramCX/GoQQBot/pkg/config"
 )
 
 const (

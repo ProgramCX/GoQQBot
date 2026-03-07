@@ -7,11 +7,11 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/ProgramCX/GoQQBot/internal/core/api/c2c"
-	"github.com/ProgramCX/GoQQBot/internal/core/api/group"
 	"github.com/ProgramCX/GoQQBot/internal/foundation/logger"
-	"github.com/ProgramCX/GoQQBot/internal/foundation/message"
+	"github.com/ProgramCX/GoQQBot/pkg/api/c2c"
+	"github.com/ProgramCX/GoQQBot/pkg/api/group"
 	"github.com/ProgramCX/GoQQBot/pkg/goqqrobot"
+	"github.com/ProgramCX/GoQQBot/pkg/message"
 	"github.com/ProgramCX/GoQQBot/shared/types"
 )
 

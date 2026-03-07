@@ -5,14 +5,10 @@
 package channel
 
 import (
-	"github.com/ProgramCX/GoQQBot/internal/foundation/message/interaction"
-	"github.com/ProgramCX/GoQQBot/internal/foundation/message/types"
+	"github.com/ProgramCX/GoQQBot/pkg/message/interaction"
+	"github.com/ProgramCX/GoQQBot/pkg/message/types"
 )
 
-// ChannelSendMessage represents the request body for sending a message to a text channel or DM.
-// POST /channels/{channel_id}/messages
-// POST /dms/{guild_id}/messages
-// reference: https://bot.q.qq.com/wiki/develop/api-v2/server-inter/message/send-receive/send.html
 type ChannelSendMessage struct {
 	Content          string                `json:"content,omitempty"`
 	Embed            *MessageEmbed         `json:"embed,omitempty"`

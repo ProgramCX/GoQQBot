@@ -16,8 +16,7 @@ const (
 )
 
 type CommonReceiveMessage struct {
-	Id string `json:"id"`
-	//Author      Author       `json:"author"`
+	Id          string       `json:"id"`
 	Content     string       `json:"content"`
 	Timestamp   string       `json:"timestamp"`
 	Attachments []Attachment `json:"attachments"`
@@ -41,6 +40,7 @@ type UserAuthor struct {
 type MemberAuthor struct {
 	MemberOpenid string `json:"member_openid"`
 }
+
 type Attachment struct {
 	ContentType ContentType `json:"content_type"`
 	Filename    string      `json:"filename"`

@@ -4,35 +4,21 @@
 
 package interaction
 
-// MessageReaction
-// reference: https://bot.q.qq.com/wiki/develop/api-v2/server-inter/message/trans/emoji.html#message-reaction-add
 type MessageReaction struct {
-	UserID string `json:"user_id"`
-
-	GuildID string `json:"guild_id"`
-
-	ChannelID string `json:"channel_id"`
-
-	Target ReactionTarget `json:"target"`
-
-	Emoji Emoji `json:"emoji"`
+	UserID    string         `json:"user_id"`
+	GuildID   string         `json:"guild_id"`
+	ChannelID string         `json:"channel_id"`
+	Target    ReactionTarget `json:"target"`
+	Emoji     Emoji          `json:"emoji"`
 }
 
 type ReactionTarget struct {
-	ID string `json:"id"`
-	// Type:
-	// 0 Message
-	// 1 Feed
-	// 2 Comment
-	// 3 Reply
+	ID   string             `json:"id"`
 	Type ReactionTargetType `json:"type"`
 }
 
 type Emoji struct {
-	ID string `json:"id"`
-	// Type:
-	// 1 System Emoji
-	// 2 Custom Emoji
+	ID   string    `json:"id"`
 	Type EmojiType `json:"type"`
 }
 
@@ -52,8 +38,6 @@ const (
 	EmojiTypeCustom EmojiType = 2
 )
 
-// GetReactionUsersResponse
-// reference: https://bot.q.qq.com/wiki/develop/api-v2/server-inter/message/trans/emoji.html#get-reaction-users
 type GetReactionUsersResponse struct {
 	Users  []ReactionUser `json:"users"`
 	Cookie string         `json:"cookie"`

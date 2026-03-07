@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/ProgramCX/GoQQBot/internal/foundation/logger"
-	"github.com/ProgramCX/GoQQBot/internal/foundation/message"
+	"github.com/ProgramCX/GoQQBot/pkg/message"
 	typesShared "github.com/ProgramCX/GoQQBot/shared/types"
 )
 
