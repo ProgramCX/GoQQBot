@@ -24,9 +24,10 @@ type RoutePair struct {
 	eventId message.EventId
 }
 
-func New() *CommandRouter {
+func New(defaultHandler Handler) *CommandRouter {
 	return &CommandRouter{
-		handlers: make(map[RoutePair]Handler),
+		handlers:       make(map[RoutePair]Handler),
+		defaultHandler: defaultHandler,
 	}
 }
 

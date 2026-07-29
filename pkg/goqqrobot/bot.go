@@ -32,14 +32,14 @@ type Bot struct {
 	apiClient *api.Client
 }
 
-func New(cfg config.Config, validator adapter.Validator) (*Bot, error) {
+func New(cfg config.Config, validator adapter.Validator, defaultHandler Handler) (*Bot, error) {
 	ascii.PrintLogo()
 	b := &Bot{
 		config:    cfg,
 		apiClient: api.NewClient(cfg.Bot.AppId, cfg.Bot.AppSecret),
 	}
 
-	b.router = router.New()
+	b.router = router.New(defaultHandler)
 
 	b.pool = pool.New(10, 100, b.router.Handle)
 	b.pool.Start()
@@ -59,14 +59,14 @@ func New(cfg config.Config, validator adapter.Validator) (*Bot, error) {
 	return b, nil
 }
 
-func NewBot(configPath string) (*Bot, error) {
+func NewBot(configPath string, defaultHandler Handler) (*Bot, error) {
 	cfg, err := config.LoadConfig(configPath)
 	if err != nil {
 		return nil, err
 	}
 
 	va := adapter.NewValidator(cfg.Bot.AppSecret)
-	bot, err := New(*cfg, *va)
+	bot, err := New(*cfg, *va, defaultHandler)
 	if err != nil {
 		return nil, err
 	}

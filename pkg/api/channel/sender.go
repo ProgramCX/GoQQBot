@@ -1,4 +1,4 @@
-﻿// Copyright 2026 ProgramCX. All rights reserved.
+// Copyright 2026 ProgramCX. All rights reserved.
 // Use of this source code is governed by a MIT license
 // that can be found in the LICENSE file.
 
@@ -9,8 +9,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/ProgramCX/GoQQBot/pkg/api"
 	"github.com/ProgramCX/GoQQBot/internal/foundation/logger"
+	"github.com/ProgramCX/GoQQBot/pkg/api"
 	"github.com/ProgramCX/GoQQBot/pkg/message"
 	channelMsg "github.com/ProgramCX/GoQQBot/pkg/message/channel"
 	"github.com/ProgramCX/GoQQBot/pkg/message/interaction"
@@ -30,6 +30,7 @@ func sendToChannel(c *types.Context, channelId string, body *channelMsg.ChannelS
 		return nil, fmt.Errorf("unmarshal send response failed: %w", err)
 	}
 	return &resp, nil
+
 }
 
 func sendToDM(c *types.Context, guildId string, body *channelMsg.ChannelSendMessage) (*message.SendMessageResponse, error) {
@@ -144,4 +145,3 @@ func RecallDM(c *types.Context, guildId string, messageId string, hideTip bool) 
 	}
 	return nil
 }
-
