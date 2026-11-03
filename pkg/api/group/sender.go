@@ -1,15 +1,16 @@
 // Copyright 2026 ProgramCX. All rights reserved.
+// 版权所有 2026 ProgramCX，保留所有权利。
 // Use of this source code is governed by a MIT license
+// 本源代码的使用受 MIT 许可证约束，
 // that can be found in the LICENSE file.
+// 许可证内容见 LICENSE 文件。
 
 package group
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 
-	"github.com/ProgramCX/GoQQBot/internal/foundation/logger"
 	"github.com/ProgramCX/GoQQBot/pkg/api"
 	"github.com/ProgramCX/GoQQBot/pkg/message"
 	"github.com/ProgramCX/GoQQBot/pkg/message/interaction"
@@ -33,9 +34,8 @@ func buildReply(c *types.Context, msgType message.TypeMessage) (*message.GroupSe
 	}
 	return &message.GroupSendMessage{
 		CommonSendMessage: message.CommonSendMessage{
-			MsgType:   msgType,
-			QQEventID: c.Payload.T,
-			MsgId:     gm.Id,
+			MsgType: msgType,
+			MsgId:   gm.Id,
 		},
 	}, nil
 }
@@ -46,8 +46,7 @@ func send(c *types.Context, body *message.GroupSendMessage) error {
 		return err
 	}
 	path := fmt.Sprintf(api.GROUP_SEND_MESSAGE, gm.GroupOpenid)
-	logger.DEBUG("send group message: %+v", body)
-	_, err = c.Client.Post(context.Background(), path, body)
+	_, err = c.Client.Post(c.RequestContext(), path, body)
 	if err != nil {
 		return fmt.Errorf("send group message failed: %w", err)
 	}
@@ -121,37 +120,15 @@ func ReplyMedia(c *types.Context, fileInfo string) error {
 	return send(c, body)
 }
 
-func UploadMedia(c *types.Context, fileType message.FileType, url string, srvSendMsg bool) (*message.RichMediaResponse, error) {
-	gm, err := GetGroupReceiveMessage(*c.Payload)
-	if err != nil {
-		return nil, err
+// UploadMedia uploads via the shared scene-independent engine.
+// UploadMedia 通过不依赖场景的共用实现上传。
+func UploadMedia(c *types.Context, fileType message.FileType, mediaURL string, srvSendMsg bool) (*message.RichMediaResponse, error) {
+	if c == nil {
+		return nil, types.ErrInvalidReplyContext
 	}
-	path := fmt.Sprintf(api.GROUP_FILE_MESSAGE, gm.GroupOpenid)
-	req := &message.RichMediaRequest{
-		FileType:   fileType,
-		URL:        url,
-		SrvSendMsg: srvSendMsg,
-	}
-	data, err := c.Client.Post(context.Background(), path, req)
-	if err != nil {
-		return nil, fmt.Errorf("upload group media failed: %w", err)
-	}
-	var resp message.RichMediaResponse
-	if err := json.Unmarshal(data, &resp); err != nil {
-		return nil, fmt.Errorf("unmarshal upload media response failed: %w", err)
-	}
-	return &resp, nil
+	return c.UploadMedia(c.RequestContext(), message.RichMediaRequest{FileType: fileType, URL: mediaURL, SrvSendMsg: srvSendMsg})
 }
 
-func RecallMessage(c *types.Context, messageId string) error {
-	gm, err := GetGroupReceiveMessage(*c.Payload)
-	if err != nil {
-		return err
-	}
-	path := fmt.Sprintf(api.GROUP_DELETE_MESSAGE, gm.GroupOpenid, messageId)
-	_, err = c.Client.Delete(context.Background(), path)
-	if err != nil {
-		return fmt.Errorf("recall group message failed: %w", err)
-	}
-	return nil
-}
+// RecallMessage recalls an explicit message ID through the shared API engine.
+// RecallMessage 通过共用 API 实现撤回明确的消息 ID。
+func RecallMessage(c *types.Context, messageID string) error { return c.Recall(messageID) }

@@ -1,0 +1,16 @@
+bot:
+  appId: "your-app-id"
+  appSecret: "your-app-secret"
+
+connection:
+  mode: webhook
+
+server:
+  host: "0.0.0.0"
+  port: 8080
+
+runtime:
+  pool:
+    workers: 10
+    queueSize: 100
+  shutdownTimeout: 15s

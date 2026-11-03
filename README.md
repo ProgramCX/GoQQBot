@@ -9,7 +9,9 @@
   <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License">
 </p>
 
-A lightweight QQ Bot framework written in Go, based on QQ Bot API v2. It supports Webhook message receiving, command routing, event handling, and multiple message types.
+A lightweight QQ Bot framework written in Go, based on QQ Bot API v2. It supports WebSocket and Webhook event receiving, command routing, event handling, and multiple message types.
+
+[Usage wiki (Chinese)](wiki/README.md) · [Quick start](wiki/getting-started/quick-start.md) · [Full navigation](wiki/_Sidebar.md)
 
 ```
    ______          ____    ____     ____           __
@@ -18,6 +20,51 @@ A lightweight QQ Bot framework written in Go, based on QQ Bot API v2. It support
 / /_/ /  / /_/ // /_/ / / /_/ /  / /_/ / / /_/ // /_
 \____/   \____/ \___\_\ \___\_\ /_____/  \____/ \__/
 ```
+
+
+[Interaction guide (Chinese)](docs/interactions.md): coverage matrix, callback routing, one-attempt ACK, mentions and clickable text commands.
+
+## Ordinary messages
+
+```go
+bot.OnMessage(message.C2C_MESSAGE_CREATE, func(ctx *types.Context) error {
+    return ctx.ReplyText("Received: " + ctx.Text())
+})
+```
+
+OnMessage takes the event type first, consistently with OnEvent. Use `OnAnyMessage(handler)` for a cross-scene fallback.
+Registered commands take precedence; other text, unknown commands and attachment-only messages reach the message handler.
+Use `ctx.Message()` for sender/message IDs and attachments; see the [receiving guide (Chinese)](docs/receiving.md).
+
+## Markdown and buttons in a few lines
+
+```go
+return ctx.ReplyMarkdown("## Done",
+    button.Command("Help", "/help"),
+    button.Link("Website", "https://example.com"),
+)
+```
+
+Import `button` from `github.com/ProgramCX/GoQQBot/pkg/message/button`.
+Unified replies infer group/C2C/channel recipients and manage reply sequences.
+Immutable builders support layouts, permissions, callbacks and raw protocol extensions.
+See the [message guide and migration examples (Chinese)](docs/messages.md)
+and the [compilable menu example](examples/menu/main.go).
+
+## WebSocket support
+
+Set `connection.mode: websocket` to receive events over WebSocket.
+Copy the [WebSocket configuration](config.websocket.example.yaml), fill in AppID/AppSecret, then run:
+
+```sh
+go run ./examples/echo -config config.yaml
+```
+
+Supports heartbeats, reconnection, session resume and cancellable shutdown.
+Existing `OnCommand` / `OnEvent` registrations remain available. The default mode is Webhook;
+legacy `server.pool` settings are supported and `bot.token` is no longer required.
+See the [connection guide (Chinese)](docs/websocket.md) for defaults, lifecycle and replay limitations,
+and the [Webhook configuration](config.webhook.example.yaml) for HTTP callbacks.
 
 ## ✨ Features
 
@@ -52,7 +99,6 @@ server:
 
 bot:
   appId: "your-app-id"
-  token: "your-bot-token"
   appSecret: "your-app-secret"
 ```
 
@@ -70,7 +116,6 @@ import (
     "path/filepath"
     "runtime"
 
-    "github.com/ProgramCX/GoQQBot/internal/foundation/logger"
     "github.com/ProgramCX/GoQQBot/pkg/api/c2c"
     "github.com/ProgramCX/GoQQBot/pkg/api/group"
     "github.com/ProgramCX/GoQQBot/pkg/message"
@@ -89,33 +134,35 @@ func main() {
 	//configPath := filepath.Join(exeDir, "bot.yaml")
 
     // Create bot instance
-    bot, err := goqqrobot.NewBot(configPath)
+    bot, err := goqqrobot.NewBot(configPath, nil)
     if err != nil {
-        logger.ERROR("Error in creating new bot instance: %v", err)
+        log.Printf("Error in creating new bot instance: %v", err)
         return
     }
 
     // Register group command
     bot.OnCommand("hello", message.GROUP_AT_MESSAGE_CREATE, func(ctx *types.Context) error {
+        if len(ctx.Args) == 0 { return group.ReplyPlainText(ctx, "Usage: /hello name") }
         err := group.ReplyPlainText(ctx, "Hello, "+ctx.Args[0])
         if err != nil {
-            logger.ERROR("Reply failed: %v", err)
+            log.Printf("Reply failed: %v", err)
         }
         return nil
     })
 
     // Register private chat command
     bot.OnCommand("hello", message.C2C_MESSAGE_CREATE, func(ctx *types.Context) error {
+        if len(ctx.Args) == 0 { return c2c.ReplyPlainText(ctx, "Usage: /hello name") }
         err := c2c.ReplyPlainText(ctx, "Hello, "+ctx.Args[0])
         if err != nil {
-            logger.ERROR("Reply failed: %v", err)
+            log.Printf("Reply failed: %v", err)
         }
         return nil
     })
 
     // Listen to friend add event
     bot.OnEvent(message.FRIEND_ADD, func(ctx *types.Context) error {
-        logger.INFO("New friend request received")
+        log.Printf("New friend request received")
         return nil
     })
 
@@ -140,7 +187,7 @@ go run main.go
 
 ```go
 // Create bot from config file
-bot, err := goqqrobot.NewBot("config.yaml")
+bot, err := goqqrobot.NewBot("config.yaml", nil)
 
 // Start server
 bot.Start()
@@ -203,13 +250,13 @@ group.ReplyMedia(ctx, fileInfo)
 import "github.com/ProgramCX/GoQQBot/pkg/api/c2c"
 
 // Send plain text
-c2c.ReplyPlainText(ctx, "message content", configPath)
+c2c.ReplyPlainText(ctx, "message content")
 
 // Send Markdown
-c2c.ReplyMarkdown(ctx, markdownContent, configPath)
+c2c.ReplyMarkdownContent(ctx, markdownContent)
 
 // Send rich media
-c2c.ReplyMedia(ctx, fileInfo, configPath)
+c2c.ReplyMedia(ctx, fileInfo)
 ```
 
 ### Context Object
@@ -262,14 +309,14 @@ GoQQBot/
 | `server.pool.workers` | int | 10 | Number of workers |
 | `server.pool.queueSize` | int | 100 | Task queue size |
 | `bot.appId` | string | - | QQ Bot App ID |
-| `bot.token` | string | - | QQ Bot Token |
+| `bot.token` | string | - | Deprecated; optional and ignored |
 | `bot.appSecret` | string | - | QQ Bot App Secret |
 
 ## 🔒 Webhook Setup
 
 Configure Webhook in [QQ Open Platform](https://q.qq.com/qqbot/#/developer/webhook-setting):
 
-- **URL**: `http://your-domain:port/webhook`
+- **URL**: `https://your-domain/webhook`
 - **Verification**: Select Ed25519 signature verification
 
 The framework automatically handles validation requests and message signature verification.
@@ -292,6 +339,9 @@ This project is licensed under the [MIT](LICENSE) License.
 
 - [QQ Bot API Documentation](https://bot.q.qq.com/wiki/develop/api-v2/)
 - [QQ Open Platform](https://q.qq.com/qqbot/)
+- [C2C/group typed messages, recall, cards and multipart media uploads](docs/media.md) (includes 14 interactive acceptance cases)
+- [Reusable Markdown image materials](docs/materials.md) (upload, pagination, deletion and interactive examples)
+- [Logging, error reporting and panic handling](docs/diagnostics.md) (silent defaults, slog injection and race checks)
 
 ---
 

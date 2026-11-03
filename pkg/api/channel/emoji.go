@@ -1,11 +1,13 @@
-﻿// Copyright 2026 ProgramCX. All rights reserved.
+// Copyright 2026 ProgramCX. All rights reserved.
+// 版权所有 2026 ProgramCX，保留所有权利。
 // Use of this source code is governed by a MIT license
+// 本源代码的使用受 MIT 许可证约束，
 // that can be found in the LICENSE file.
+// 许可证内容见 LICENSE 文件。
 
 package channel
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -17,7 +19,7 @@ import (
 
 func AddReaction(c *types.Context, channelId string, messageId string, emojiType interaction.EmojiType, emojiId string) error {
 	path := fmt.Sprintf(api.CHANNEL_EMOJI, channelId, messageId, strconv.Itoa(int(emojiType)), emojiId)
-	_, err := c.Client.Request(context.Background(), "PUT", path, nil)
+	_, err := c.Client.Request(c.RequestContext(), "PUT", path, nil)
 	if err != nil {
 		return fmt.Errorf("add reaction failed: %w", err)
 	}
@@ -26,7 +28,7 @@ func AddReaction(c *types.Context, channelId string, messageId string, emojiType
 
 func RemoveReaction(c *types.Context, channelId string, messageId string, emojiType interaction.EmojiType, emojiId string) error {
 	path := fmt.Sprintf(api.CHANNEL_EMOJI, channelId, messageId, strconv.Itoa(int(emojiType)), emojiId)
-	_, err := c.Client.Request(context.Background(), "DELETE", path, nil)
+	_, err := c.Client.Request(c.RequestContext(), "DELETE", path, nil)
 	if err != nil {
 		return fmt.Errorf("remove reaction failed: %w", err)
 	}
@@ -43,7 +45,7 @@ func GetReactionUsers(c *types.Context, channelId string, messageId string, emoj
 	if limit > 0 {
 		path += sep + "limit=" + strconv.Itoa(limit)
 	}
-	data, err := c.Client.Get(context.Background(), path)
+	data, err := c.Client.Get(c.RequestContext(), path)
 	if err != nil {
 		return nil, fmt.Errorf("get reaction users failed: %w", err)
 	}
@@ -53,4 +55,3 @@ func GetReactionUsers(c *types.Context, channelId string, messageId string, emoj
 	}
 	return &resp, nil
 }
-

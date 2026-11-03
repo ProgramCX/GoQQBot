@@ -1,7 +1,14 @@
 // Copyright 2026 ProgramCX. All rights reserved.
+// 版权所有 2026 ProgramCX，保留所有权利。
 // Use of this source code is governed by a MIT license
+// 本源代码的使用受 MIT 许可证约束，
 // that can be found in the LICENSE file.
+// 许可证内容见 LICENSE 文件。
 
+// Package api provides concurrency-safe authenticated HTTP access to QQ Bot OpenAPI.
+// api 包提供可并发使用且带认证的 QQ 机器人 OpenAPI HTTP 客户端。
+// Clients own their token cache; injected HTTP clients remain caller-owned.
+// 客户端持有各自的令牌缓存；注入的 HTTP 客户端仍由调用方持有。
 package api
 
 import (
@@ -12,18 +19,22 @@ import (
 	"io"
 
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
-
-	"github.com/ProgramCX/GoQQBot/internal/foundation/logger"
 )
 
+// Current QQ Bot authentication and OpenAPI endpoints.
+// 当前 QQ 机器人认证和 OpenAPI 端点。
 const (
-	TokenURL = "https://bots.qq.com/app/getAppAccessToken"
-	BaseURL  = "https://api.sgroup.qq.com"
+	TokenURL = "https://api.bot.qq.com/app/getAppAccessToken"
+	BaseURL  = "https://api.bot.qq.com"
 )
 
+// Client shares token refresh across concurrent API calls. Construct it with NewClient.
+// Client 在并发 API 调用间共享令牌刷新，通过 NewClient 构造。
 type Client struct {
 	appID string
 
@@ -32,70 +43,179 @@ type Client struct {
 	expiresAt   time.Time
 	mu          sync.RWMutex
 	httpClient  *http.Client
+	refresh     chan struct{}
 }
 
-func NewClient(appID, appSecret string) *Client {
-	return &Client{
+// NewClient constructs a dormant client. Credentials are used only when a request needs a token.
+// NewClient 创建尚未发起请求的客户端，仅在请求需要令牌时使用凭证。
+func NewClient(appID, appSecret string, options ...ClientOption) *Client {
+	c := &Client{
 		appID:     appID,
 		appSecret: appSecret,
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
 	}
+	for _, option := range options {
+		option(c)
+	}
+	return c
 }
 
-func (c *Client) EnsureToken() error {
-	logger.DEBUG("INFO: %+v", c)
-	c.mu.RLock()
-	if c.accessToken != "" && time.Until(c.expiresAt) > 5*time.Minute {
-		c.mu.RUnlock()
-		return nil
-	}
-	c.mu.RUnlock()
+// ClientOption customizes a client before its first use.
+// ClientOption 在客户端首次使用前定制配置。
+type ClientOption func(*Client)
 
+// WithHTTPClient uses the caller-owned HTTP client, including for token refresh.
+// WithHTTPClient 使用调用方持有的 HTTP 客户端，包括令牌刷新请求。
+func WithHTTPClient(client *http.Client) ClientOption {
+	return func(c *Client) {
+		if client != nil {
+			c.httpClient = client
+		}
+	}
+}
+
+// APIError preserves HTTP status and the platform's machine-readable error code.
+// APIError 保留 HTTP 状态和平台机器可读错误码。
+type APIError struct {
+	StatusCode int
+	Code       int
+	TraceID    string
+	diagnostic string
+}
+
+// DiagnosticMessage returns the bounded, redacted platform reason, or empty if none was supplied.
+// DiagnosticMessage 返回长度受限且脱敏的平台原因；未提供原因则返回空串。
+// Credentials known to this client, URLs and likely opaque tokens are removed on capture.
+// 捕获时移除客户端已知凭证、URL 及疑似不透明令牌。
+// This best-effort diagnostic is omitted from Error; do not treat its text as a stable error code.
+// 此诊断为尽力脱敏，不包含在 Error 中；不得将其文本视为稳定错误码。
+func (e *APIError) DiagnosticMessage() string {
+	if e == nil {
+		return ""
+	}
+	return e.diagnostic
+}
+
+// Error omits response content because it may contain sensitive values.
+// Error 不包含响应内容，因为其中可能存在敏感值。
+func (e *APIError) Error() string {
+	return fmt.Sprintf("QQ API failed: HTTP %d, code %d, trace %s", e.StatusCode, e.Code, e.TraceID)
+}
+
+// EnsureToken ensures that a token is cached. Prefer AccessToken for cancellable operations.
+// EnsureToken 确保令牌已缓存；可取消的操作优先使用 AccessToken。
+func (c *Client) EnsureToken() error { _, err := c.AccessToken(context.Background()); return err }
+
+// InvalidateToken expires a rejected cached token without invalidating a newer concurrent refresh.
+// InvalidateToken 使被拒绝的缓存令牌过期，不会使并发刷新产生的新令牌失效。
+func (c *Client) InvalidateToken(rejected string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-
-	if c.accessToken != "" && time.Until(c.expiresAt) > 5*time.Minute {
-		return nil
+	if c.accessToken == rejected {
+		c.expiresAt = time.Time{}
 	}
-
-	payload := map[string]string{
-		"appId":        c.appID,
-		"clientSecret": c.appSecret,
-	}
-	jsonData, _ := json.Marshal(payload)
-
-	resp, err := http.Post(TokenURL, "application/json", bytes.NewReader(jsonData))
-	if err != nil {
-		logger.ERROR("Get access token failed: %v", err)
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		logger.ERROR("Get access token failed[%d]: %s", resp.StatusCode, string(body))
-	}
-
-	var result struct {
-		AccessToken string `json:"access_token"`
-		ExpiresIn   string `json:"expires_in"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return err
-	}
-
-	expiresSec, _ := strconv.Atoi(result.ExpiresIn)
-	c.accessToken = result.AccessToken
-	c.expiresAt = time.Now().Add(time.Duration(expiresSec) * time.Second)
-
-	logger.INFO("Get access token success, expires in %s seconds", result.ExpiresIn)
-	return nil
 }
 
+// AccessToken returns a cached token, refreshing as necessary. Concurrent callers share a refresh.
+// AccessToken 返回缓存令牌，必要时刷新；并发调用共享一次刷新。
+func (c *Client) AccessToken(ctx context.Context) (string, error) {
+	for {
+		if err := ctx.Err(); err != nil {
+			return "", err
+		}
+		c.mu.Lock()
+		if c.accessToken != "" && time.Now().Before(c.expiresAt) {
+			token := c.accessToken
+			c.mu.Unlock()
+			return token, nil
+		}
+		if pending := c.refresh; pending != nil {
+			c.mu.Unlock()
+			select {
+			case <-ctx.Done():
+				return "", ctx.Err()
+			case <-pending:
+				continue
+			}
+		}
+		pending := make(chan struct{})
+		c.refresh = pending
+		c.mu.Unlock()
+		token, expiry, err := c.fetchToken(ctx)
+		c.mu.Lock()
+		if err == nil {
+			c.accessToken = token
+			c.expiresAt = expiry
+		}
+		c.refresh = nil
+		close(pending)
+		c.mu.Unlock()
+		return token, err
+	}
+}
+
+func (c *Client) fetchToken(ctx context.Context) (string, time.Time, error) {
+	data, err := json.Marshal(map[string]string{"appId": c.appID, "clientSecret": c.appSecret})
+	if err != nil {
+		return "", time.Time{}, err
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, TokenURL, bytes.NewReader(data))
+	if err != nil {
+		return "", time.Time{}, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return "", time.Time{}, fmt.Errorf("fetch access token: %w", err)
+	}
+	defer resp.Body.Close()
+	var result struct {
+		AccessToken string          `json:"access_token"`
+		ExpiresIn   json.RawMessage `json:"expires_in"`
+		Code        int             `json:"code"`
+		Message     string          `json:"message"`
+	}
+	decodeErr := json.NewDecoder(io.LimitReader(resp.Body, 1<<20)).Decode(&result)
+	if resp.StatusCode != http.StatusOK || result.Code != 0 {
+		return "", time.Time{}, &APIError{StatusCode: resp.StatusCode, Code: result.Code, diagnostic: redactAPIDiagnostic(result.Message, c.appID, c.appSecret, result.AccessToken)}
+	}
+	if decodeErr != nil {
+		return "", time.Time{}, fmt.Errorf("decode access token: %w", decodeErr)
+	}
+	seconds, err := strconv.ParseInt(strings.Trim(string(result.ExpiresIn), "\""), 10, 64)
+	if err != nil || seconds <= 0 || seconds > 86400 || result.AccessToken == "" {
+		return "", time.Time{}, fmt.Errorf("invalid access-token response")
+	}
+	return result.AccessToken, time.Now().Add(time.Duration(seconds)*time.Second - min(30*time.Second, time.Duration(seconds)*time.Second/10)), nil
+}
+
+// Gateway returns the dynamically discovered secure WebSocket endpoint.
+// Gateway 返回动态发现的安全 WebSocket 端点。
+func (c *Client) Gateway(ctx context.Context) (string, error) {
+	data, err := c.Get(ctx, "/gateway")
+	if err != nil {
+		return "", fmt.Errorf("discover gateway: %w", err)
+	}
+	var gateway struct {
+		URL string `json:"url"`
+	}
+	if err := json.Unmarshal(data, &gateway); err != nil {
+		return "", fmt.Errorf("decode gateway: %w", err)
+	}
+	u, err := url.Parse(gateway.URL)
+	if err != nil || u.Scheme != "wss" || u.Host == "" {
+		return "", fmt.Errorf("gateway must return a secure WebSocket URL")
+	}
+	return gateway.URL, nil
+}
+
+// Request performs an authenticated JSON request and returns an owned response body.
+// Request 执行已认证的 JSON 请求，并返回独立持有的响应正文。
 func (c *Client) Request(ctx context.Context, method, path string, body interface{}) ([]byte, error) {
-	if err := c.EnsureToken(); err != nil {
+	token, err := c.AccessToken(ctx)
+	if err != nil {
 		return nil, err
 	}
 
@@ -115,10 +235,6 @@ func (c *Client) Request(ctx context.Context, method, path string, body interfac
 		return nil, err
 	}
 
-	c.mu.RLock()
-	token := c.accessToken
-	c.mu.RUnlock()
-
 	req.Header.Set("Authorization", "QQBot "+token)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -133,78 +249,59 @@ func (c *Client) Request(ctx context.Context, method, path string, body interfac
 		return nil, err
 	}
 
-	if resp.StatusCode >= 400 {
-		return nil, fmt.Errorf("request failed[%d]: %s", resp.StatusCode, string(data))
+	var failure struct {
+		Code       int    `json:"err_code"`
+		LegacyCode int    `json:"code"`
+		TraceID    string `json:"trace_id"`
+		Message    string `json:"message"`
+		Msg        string `json:"msg"`
+		ErrMessage string `json:"err_msg"`
+	}
+	// Success bodies vary by endpoint, so inspect only the optional error envelope.
+	// 成功正文因端点而异，因此仅检查可选的错误信封。
+	if len(data) > 0 {
+		_ = json.Unmarshal(data, &failure)
+	}
+	if failure.Code == 0 {
+		failure.Code = failure.LegacyCode
+	}
+	if resp.StatusCode >= 400 || failure.Code != 0 {
+		if failure.TraceID == "" {
+			failure.TraceID = resp.Header.Get("X-Tps-trace-ID")
+		}
+		reason := failure.Message
+		if reason == "" {
+			reason = failure.Msg
+		}
+		if reason == "" {
+			reason = failure.ErrMessage
+		}
+		return nil, &APIError{StatusCode: resp.StatusCode, Code: failure.Code, TraceID: failure.TraceID, diagnostic: redactAPIDiagnostic(reason, c.appID, c.appSecret, token)}
 	}
 
 	return data, nil
 }
 
+// Post sends a JSON POST request.
+// Post 发送 JSON POST 请求。
 func (c *Client) Post(ctx context.Context, path string, body interface{}) ([]byte, error) {
 	return c.Request(ctx, http.MethodPost, path, body)
 }
 
+// Get sends a GET request.
+// Get 发送 GET 请求。
 func (c *Client) Get(ctx context.Context, path string) ([]byte, error) {
 	return c.Request(ctx, http.MethodGet, path, nil)
 }
 
+// Delete sends a DELETE request.
+// Delete 发送 DELETE 请求。
 func (c *Client) Delete(ctx context.Context, path string) ([]byte, error) {
 	return c.Request(ctx, http.MethodDelete, path, nil)
 }
 
+// Put sends a JSON PUT request.
+// Put 发送 JSON PUT 请求。
 func (c *Client) Put(ctx context.Context, path string, body interface{}) ([]byte, error) {
 	return c.Request(ctx, http.MethodPut, path, body)
 }
-
-//func (c *Client) SendGroupMessage(ctx context.Context, groupID string, content string, msgId string, eventId string) error {
-//	path := fmt.Sprintf("/v2/groups/%s/messages", groupID)
-//	body := map[string]interface{}{
-//		"content":  content,
-//		"msg_type": 0,
-//		"msg_id":   msgId,
-//		"event_id": eventId,
-//	}
-//	_, err := c.Post(ctx, path, body)
-//	return err
-//}
-//
-//func (c *Client) SendGroupMarkdownMessage(ctx context.Context, groupID string, markdown string, msgId string, eventId string) error {
-//	path := fmt.Sprintf("/v2/groups/%s/messages", groupID)
-//	body := map[string]interface{}{
-//		"markdown": markdown,
-//		"msg_type": 2,
-//		"msg_id":   msgId,
-//		"event_id": eventId,
-//	}
-//	_, err := c.Post(ctx, path, body)
-//	return err
-//}
-//
-//func (c *Client) SendGroupButtonMessage(ctx context.Context, groupID string, keyboardId string,
-//	markdownId string, params []MarkdownParam, msgId string, eventId string) error {
-//	path := fmt.Sprintf("/v2/groups/%s/messages", groupID)
-//
-//	body := map[string]interface{}{
-//		//"keyboard": map[string]interface{}{
-//		//	"id": keyboardId,
-//		//},
-//		"markdown": map[string]interface{}{
-//			"custom_template_id": markdownId,
-//			"params":             params,
-//		},
-//		"msg_type": 2,
-//		"msg_id":   msgId,
-//		"event_id": eventId,
-//	}
-//
-//	debugData, _ := json.MarshalIndent(body, "", "  ")
-//	logger.DEBUG("SendGroupButtonMessage 请求体:\n%s", string(debugData))
-//
-//	_, err := c.Post(ctx, path, body)
-//	return err
-//}
-//
-//type MarkdownParam struct {
-//	Key    string   `json:"key"`
-//	Values []string `json:"values"`
-//}

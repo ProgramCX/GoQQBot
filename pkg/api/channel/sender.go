@@ -1,15 +1,16 @@
 // Copyright 2026 ProgramCX. All rights reserved.
+// 版权所有 2026 ProgramCX，保留所有权利。
 // Use of this source code is governed by a MIT license
+// 本源代码的使用受 MIT 许可证约束，
 // that can be found in the LICENSE file.
+// 许可证内容见 LICENSE 文件。
 
 package channel
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 
-	"github.com/ProgramCX/GoQQBot/internal/foundation/logger"
 	"github.com/ProgramCX/GoQQBot/pkg/api"
 	"github.com/ProgramCX/GoQQBot/pkg/message"
 	channelMsg "github.com/ProgramCX/GoQQBot/pkg/message/channel"
@@ -20,8 +21,7 @@ import (
 
 func sendToChannel(c *types.Context, channelId string, body *channelMsg.ChannelSendMessage) (*message.SendMessageResponse, error) {
 	path := fmt.Sprintf(api.CHANNEL_SEND_MESSAGE, channelId)
-	logger.DEBUG("send channel message to %s: %+v", channelId, body)
-	data, err := c.Client.Post(context.Background(), path, body)
+	data, err := c.Client.Post(c.RequestContext(), path, body)
 	if err != nil {
 		return nil, fmt.Errorf("send channel message failed: %w", err)
 	}
@@ -35,8 +35,7 @@ func sendToChannel(c *types.Context, channelId string, body *channelMsg.ChannelS
 
 func sendToDM(c *types.Context, guildId string, body *channelMsg.ChannelSendMessage) (*message.SendMessageResponse, error) {
 	path := fmt.Sprintf(api.CHANNEL_PRIVATE_MESSAGE, guildId)
-	logger.DEBUG("send DM to guild %s: %+v", guildId, body)
-	data, err := c.Client.Post(context.Background(), path, body)
+	data, err := c.Client.Post(c.RequestContext(), path, body)
 	if err != nil {
 		return nil, fmt.Errorf("send DM failed: %w", err)
 	}
@@ -127,7 +126,7 @@ func RecallChannelMessage(c *types.Context, channelId string, messageId string, 
 	if hideTip {
 		path += "?hidetip=true"
 	}
-	_, err := c.Client.Request(context.Background(), "DELETE", path, nil)
+	_, err := c.Client.Request(c.RequestContext(), "DELETE", path, nil)
 	if err != nil {
 		return fmt.Errorf("recall channel message failed: %w", err)
 	}
@@ -139,7 +138,7 @@ func RecallDM(c *types.Context, guildId string, messageId string, hideTip bool) 
 	if hideTip {
 		path += "?hidetip=true"
 	}
-	_, err := c.Client.Request(context.Background(), "DELETE", path, nil)
+	_, err := c.Client.Request(c.RequestContext(), "DELETE", path, nil)
 	if err != nil {
 		return fmt.Errorf("recall DM failed: %w", err)
 	}

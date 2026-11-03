@@ -1,0 +1,19 @@
+{
+  "name": "goqqbot-docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "docs:dev": "vitepress dev wiki --host 127.0.0.1",
+    "docs:build": "vitepress build wiki",
+    "docs:preview": "vitepress preview wiki --host 127.0.0.1",
+    "docs:check": "python wiki/_tools/check_docs.py"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@fontsource/ibm-plex-mono": "5.2.7",
+    "@fontsource/ibm-plex-sans": "5.2.8",
+    "vitepress": "1.6.4"
+  }
+}

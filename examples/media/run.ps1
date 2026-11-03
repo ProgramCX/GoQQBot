@@ -1,0 +1,11 @@
+go run ./ -config ../../config.yaml -debug-events `
+  -image-file "..\..\test\image.jpg" `
+  -video-file "..\..\test\video.mp4" `
+  -voice-file "..\..\test\voice.flac" `
+  -file-file "..\..\test\image.jpg" `
+  -card-url "https://assets.programcx.cn/qyqx.jpg" `
+  -card-image "https://assets.programcx.cn/qyqx.jpg" `
+  -image-url "https://assets.programcx.cn/qyqx.jpg" `
+  -voice-url "https://assets.programcx.cn/fire_sound.mp3" `
+  -video-url "https://assets.programcx.cn/video/video-1.mp4" `
+  -file-url "https://assets.programcx.cn/game-mc/resources.zip"

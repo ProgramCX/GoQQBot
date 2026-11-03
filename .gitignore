@@ -34,3 +34,15 @@ go.work.sum
 .vscode/
 
 cmd/dev
+
+# Local bot credentials
+/config.yaml
+
+#test files
+/test
+
+# Documentation site dependencies and generated output
+# 文档站依赖及构建产物
+/node_modules/
+/wiki/.vitepress/cache/
+/wiki/.vitepress/dist/

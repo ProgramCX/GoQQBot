@@ -9,7 +9,9 @@
   <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License">
 </p>
 
-一个用 Go 语言编写的轻量级 QQ 机器人框架，基于 QQ Bot API v2 开发，支持 Webhook 方式接收消息，提供命令路由、事件处理和多种消息类型支持。
+一个用 Go 语言编写的轻量级 QQ 机器人框架，基于 QQ Bot API v2 开发，支持 WebSocket 和 Webhook 方式接收事件，提供命令路由、事件处理和多种消息类型支持。
+
+[使用文档](wiki/README.md) · [快速开始](wiki/getting-started/quick-start.md) · [完整目录](wiki/_Sidebar.md)
 
 ```
    ______          ____    ____     ____           __
@@ -18,6 +20,47 @@
 / /_/ /  / /_/ // /_/ / / /_/ /  / /_/ / / /_/ // /_
 \____/   \____/ \___\_\ \___\_\ /_____/  \____/ \__/
 ```
+
+
+[按钮回调与文本交互指南](docs/interactions.md)：包含覆盖清单、`OnButton` / `OnInteraction`、ACK 和 @/点击命令标签。
+
+## 普通消息也能一处处理
+
+```go
+bot.OnMessage(message.C2C_MESSAGE_CREATE, func(ctx *types.Context) error {
+    return ctx.ReplyText("收到：" + ctx.Text())
+})
+```
+
+事件类型放在第一个参数，与 OnEvent 一致。跨场景统一处理使用 `OnAnyMessage(handler)`。
+匹配命令优先；普通文本、未知命令及仅有附件的消息进入 OnMessage。
+`ctx.Message()` 可读取发送者、消息 ID 和附件，详见 [接收消息指南](docs/receiving.md)。
+
+## 几行发送 Markdown 和按钮
+
+```go
+return ctx.ReplyMarkdown("## 操作成功",
+    button.Command("帮助", "/help"),
+    button.Command("绑定", "/bind "),
+)
+```
+
+`button` 来自 `github.com/ProgramCX/GoQQBot/pkg/message/button`。
+统一回复入口自动处理群聊/私聊/频道路由和消息序号；支持布局、权限、回调按钮及原始字段扩展。
+详见 [消息构造与 GoCortex 迁移](docs/messages.md) 和 [完整菜单示例](examples/menu/main.go)。
+
+## WebSocket 接入
+
+现在可以在配置文件中设置 `connection.mode: websocket`，使用 WebSocket 接收事件。
+复制 [WebSocket 配置示例](config.websocket.example.yaml)，填写 AppID/AppSecret 后运行：
+
+```sh
+go run ./examples/echo -config config.yaml
+```
+
+支持心跳、断线重连、会话恢复和可取消关闭。现有 `OnCommand` / `OnEvent` 注册方式继续可用。
+缺省连接方式为 Webhook，旧 `server.pool` 配置仍可读取；`bot.token` 不再必填。
+完整说明、默认值与恢复边界见 [接入文档](docs/websocket.md)，另有 [Webhook 配置示例](config.webhook.example.yaml)。
 
 ## ✨ 特性
 
@@ -52,7 +95,6 @@ server:
 
 bot:
   appId: "your-app-id"
-  token: "your-bot-token"
   appSecret: "your-app-secret"
 ```
 
@@ -70,7 +112,6 @@ import (
     "path/filepath"
     "runtime"
 
-    "github.com/ProgramCX/GoQQBot/internal/foundation/logger"
     "github.com/ProgramCX/GoQQBot/pkg/api/c2c"
     "github.com/ProgramCX/GoQQBot/pkg/api/group"
     "github.com/ProgramCX/GoQQBot/pkg/message"
@@ -89,33 +130,35 @@ func main() {
 	//configPath := filepath.Join(exeDir, "config.yaml")
 
     // 创建机器人实例
-    bot, err := goqqrobot.NewBot(configPath)
+    bot, err := goqqrobot.NewBot(configPath, nil)
     if err != nil {
-        logger.ERROR("创建机器人实例失败: %v", err)
+        log.Printf("创建机器人实例失败: %v", err)
         return
     }
 
     // 注册群聊命令
     bot.OnCommand("hello", message.GROUP_AT_MESSAGE_CREATE, func(ctx *types.Context) error {
+        if len(ctx.Args) == 0 { return group.ReplyPlainText(ctx, "Usage: /hello name") }
         err := group.ReplyPlainText(ctx, "你好，"+ctx.Args[0])
         if err != nil {
-            logger.ERROR("回复失败: %v", err)
+            log.Printf("回复失败: %v", err)
         }
         return nil
     })
 
     // 注册私聊命令
     bot.OnCommand("hello", message.C2C_MESSAGE_CREATE, func(ctx *types.Context) error {
+        if len(ctx.Args) == 0 { return c2c.ReplyPlainText(ctx, "Usage: /hello name") }
         err := c2c.ReplyPlainText(ctx, "你好，"+ctx.Args[0])
         if err != nil {
-            logger.ERROR("回复失败: %v", err)
+            log.Printf("回复失败: %v", err)
         }
         return nil
     })
 
     // 监听好友添加事件
     bot.OnEvent(message.FRIEND_ADD, func(ctx *types.Context) error {
-        logger.INFO("收到好友添加请求")
+        log.Printf("收到好友添加请求")
         return nil
     })
 
@@ -140,7 +183,7 @@ go run main.go
 
 ```go
 // 从配置文件创建机器人
-bot, err := goqqrobot.NewBot("config.yaml")
+bot, err := goqqrobot.NewBot("config.yaml", nil)
 
 // 启动服务
 bot.Start()
@@ -203,13 +246,13 @@ group.ReplyMedia(ctx, fileInfo)
 import "github.com/ProgramCX/GoQQBot/pkg/api/c2c"
 
 // 发送纯文本
-c2c.ReplyPlainText(ctx, "消息内容", configPath)
+c2c.ReplyPlainText(ctx, "消息内容")
 
 // 发送 Markdown
-c2c.ReplyMarkdown(ctx, markdownContent, configPath)
+c2c.ReplyMarkdownContent(ctx, markdownContent)
 
 // 发送富媒体
-c2c.ReplyMedia(ctx, fileInfo, configPath)
+c2c.ReplyMedia(ctx, fileInfo)
 ```
 
 ### Context 对象
@@ -262,14 +305,14 @@ GoQQBot/
 | `server.pool.workers` | int | 10 | 工作协程数 |
 | `server.pool.queueSize` | int | 100 | 任务队列大小 |
 | `bot.appId` | string | - | QQ Bot App ID |
-| `bot.token` | string | - | QQ Bot Token |
+| `bot.token` | string | - | Deprecated; optional and ignored |
 | `bot.appSecret` | string | - | QQ Bot App Secret |
 
 ## 🔒 Webhook 配置
 
 在 [QQ 开放平台](https://q.qq.com/qqbot/#/developer/webhook-setting) 配置 Webhook：
 
-- **URL**: `http://your-domain:port/webhook`
+- **URL**: `https://your-domain/webhook`
 - **验证方式**: 选择 Ed25519 签名验证
 
 框架会自动处理验证请求和消息签名验证。
@@ -292,6 +335,9 @@ GoQQBot/
 
 - [QQ Bot API 文档](https://bot.q.qq.com/wiki/develop/api-v2/)
 - [QQ 开放平台](https://q.qq.com/qqbot/)
+- [群聊与单聊：结构化接收、撤回、卡片和富媒体上传](docs/media.md)（附 14 项按钮验收示例）
+- [Markdown 图片素材管理与业务复用](docs/materials.md)（上传、分页查询、删除及按钮示例）
+- [日志、错误通知与 panic 处理](docs/diagnostics.md)（默认静默、slog 注入、错误回调与竞态检查）
 
 ---
 

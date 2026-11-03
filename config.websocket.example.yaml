@@ -1,0 +1,24 @@
+bot:
+  appId: "your-app-id"
+  appSecret: "your-app-secret"
+
+connection:
+  mode: websocket
+  websocket:
+    intents:
+      - GROUP_AND_C2C_EVENT
+      # - INTERACTION
+      # - PUBLIC_GUILD_MESSAGES
+    dialTimeout: 10s
+    reconnect:
+      initialDelay: 1s
+      maxDelay: 30s
+    shard:
+      id: 0
+      total: 1
+
+runtime:
+  pool:
+    workers: 10
+    queueSize: 100
+  shutdownTimeout: 15s
