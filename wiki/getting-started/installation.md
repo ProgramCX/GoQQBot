@@ -1,6 +1,6 @@
 # 安装 SDK
 
-GoQQBot 作为模块导入业务项目。所需 Go 版本见仓库的 `go.mod`，最低为 **1.24.4**。
+在 Go 项目里添加 GoQQBot 模块，就能导入 SDK。仓库的 `go.mod` 要求 Go **1.24.4** 或更高版本。
 
 ## 在业务项目中安装
 
@@ -10,17 +10,17 @@ GoQQBot 作为模块导入业务项目。所需 Go 版本见仓库的 `go.mod`�
 go mod init example.com/mybot
 ```
 
-仓库及目标提交公开后，可以添加依赖。
+仓库和所需的提交都公开后，就可以添加依赖。
 
 ```sh
 go get github.com/ProgramCX/GoQQBot
 ```
 
-发布后，业务项目可固定已验收的标签或提交。
+SDK 发布后，可以把依赖固定到已验收的标签或提交。
 
 ## 使用本地工作区
 
-开发尚未发布的代码时，在业务项目中添加 `replace`。Windows PowerShell 示例中的目录可换成实际位置。
+要在业务项目里试用本地代码，可以添加 `replace`。把下面 PowerShell 示例中的目录换成你本机的 SDK 路径。
 
 ```powershell
 go mod edit -require=github.com/ProgramCX/GoQQBot@v0.0.0
@@ -36,7 +36,7 @@ go run .
 
 ## 查看 API
 
-用本地命令查看包和公开 API。
+安装后，可以用以下命令查看 SDK 的包和公开 API。
 
 ```sh
 go doc github.com/ProgramCX/GoQQBot/pkg/goqqrobot
@@ -47,9 +47,9 @@ go doc github.com/ProgramCX/GoQQBot/shared/types.Context.Reply
 
 ## 注意事项
 
-- SDK 以模块形式使用。`go install` 不会安装一个可运行的机器人程序。
-- 添加依赖时，Go 读取远端已发布的代码。本地尚未推送的修改不会自动下载。文档不预设已发布的版本。
-- 本地 `replace` 只作用于当前模块，不会随 SDK 传递。发布到其他机器前，把本地绝对路径换成可下载的版本。
+- SDK 是供业务项目导入的模块。运行 `go install` 不会得到一个可执行的机器人。
+- 添加依赖时，Go 只会下载远端已有的代码。如需使用尚未推送的修改，可以配置本地工作区。示例未固定到特定发布版本。
+- 本地 `replace` 只对当前模块生效。业务项目部署到其他机器前，把指向你本机的绝对路径换成可下载的版本。
 - 在 Windows 等平台运行 `go test -race ./...`，需要满足 Go 的 CGO 和 C 工具链要求。
 
 ## 另请参阅

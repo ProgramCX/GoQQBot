@@ -50,7 +50,7 @@ func receive(ctx *types.Context) error {
 
 ## 路由优先级
 
-普通消息按以下顺序查找处理函数，命中后只调用一个。
+收到消息后，SDK 按以下顺序查找处理函数，只调用第一个匹配的函数。
 
 1. 当前事件类型匹配的已注册命令。
 2. 当前类型的 `OnMessage`。
@@ -63,7 +63,7 @@ func receive(ctx *types.Context) error {
 
 ## 原始事件与交互
 
-生命周期事件可通过 `OnEvent` 读取 `ctx.Payload.D`。按对应的官方模型解码事件数据。
+用 `OnEvent` 注册生命周期事件，再从 `ctx.Payload.D` 读取数据。解析时使用该事件对应的官方结构。
 
 交互使用独立路由，依次匹配以下处理函数。
 
@@ -80,7 +80,7 @@ func receive(ctx *types.Context) error {
 - 消息型 `OnEvent` 保留旧版兼容行为。统一接收正文和附件时，使用 `OnMessage`。
 - 交互不会进入 `OnAnyMessage`。SDK 不自动 ACK，确认方式见[按钮回调](../../server-api/messages/interactions/button-callbacks.md)。
 - 处理函数可能并发执行。处理函数应响应 `ctx.RequestContext()`。
-- 载荷和 Context 的公开字段保持只读。处理函数使用 Context 指针，避免复制。
+- 通过原指针使用 `Context`，避免复制整个结构。事件数据和 `Context` 的公开字段只供读取。
 
 ## 另请参阅
 

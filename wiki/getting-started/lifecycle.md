@@ -1,10 +1,10 @@
 # 运行与关闭
 
-独立机器人可用 `StartWithGracefulShutdown()`。嵌入已有服务时，用 `Run(ctx)` 让业务统一管理取消信号。
+机器人独立运行时，用 `StartWithGracefulShutdown()` 处理系统退出信号。机器人和其他服务一起运行时，把服务的上下文传给 `Run(ctx)`，让它们一起退出。
 
 ## 让业务上下文管理运行
 
-下面的函数接受已创建并注册好处理函数的机器人。
+创建 Bot 并注册好处理函数后，就可以调用 `Run(ctx)`。
 
 ```go
 package guide
@@ -20,11 +20,11 @@ func Serve(ctx context.Context, bot *goqqrobot.Bot) error {
 }
 ```
 
-`Run` 会阻塞，直到取消、关闭或发生不可恢复的传输错误。调用方取消时，可用 `errors.Is(err, context.Canceled)` 检查返回值。超时则检查 `context.DeadlineExceeded`。
+`Run` 会一直等到上下文取消、Bot 关闭，或事件连接出错且无法恢复。要判断是不是主动取消，用 `errors.Is(err, context.Canceled)`。如果要判断是不是超时，就检查 `context.DeadlineExceeded`。
 
 ## 在服务关闭流程中等待
 
-调用 `Shutdown` 停止接收事件并等待关闭。
+服务退出时，调用 `Shutdown` 停止接收事件，并等 Bot 完成关闭。
 
 ```go
 package guide
@@ -43,29 +43,29 @@ func StopBot(bot *goqqrobot.Bot) error {
 }
 ```
 
-`Shutdown` 先取消传输和处理函数的上下文，再等待关闭。多次或并发调用都受支持。网络和数据库操作可以接收 `ctx.RequestContext()`，随处理函数取消。
+`Shutdown` 会先取消事件传输和处理函数的上下文，再等 Bot 退出。处理函数如果要发网络请求或查数据库，把 `ctx.RequestContext()` 传进去，这些操作就能收到同一个取消信号。
 
 ## 生命周期约束
 
-下表列出各方法管理的阶段。
+创建 Bot、运行 Bot 和关闭 Bot 分别由以下方法负责。
 
 | 操作 | 行为 |
 | --- | --- |
-| `NewWithConfig` / `NewBot` | 校验和组装，不联网、不启动工作协程 |
-| `Run(ctx)` | 启动一次。运行中再次调用返回 `ErrAlreadyStarted` |
-| `Start()` | 用后台上下文调用 Run，需另行 Stop/Shutdown |
-| `StartWithGracefulShutdown()` | 监听中断及终止信号，保留关闭故障 |
-| `Shutdown(ctx)` | 可重复调用。在 Run 前调用也会永久关闭实例 |
-| `Stop()` | 使用配置的 `runtime.shutdownTimeout` 调用 Shutdown |
+| `NewWithConfig` / `NewBot` | 检查配置并创建实例。此时还未联网，也未启动工作协程 |
+| `Run(ctx)` | 启动 Bot。运行期间再次调用会返回 `ErrAlreadyStarted` |
+| `Start()` | 用后台上下文调用 `Run`。退出时调用 `Stop` 或 `Shutdown` |
+| `StartWithGracefulShutdown()` | 收到中断或终止信号后关闭 Bot。关闭时遇到的错误也会返回 |
+| `Shutdown(ctx)` | 可以重复调用，也可以并发调用。即使还没调用 `Run`，也会永久关闭这个 Bot |
+| `Stop()` | 按 `runtime.shutdownTimeout` 设置等待时限，再调用 `Shutdown` |
 
 ## 注意事项
 
-- 处理函数或观察函数的首个故障会并入退出错误。返回值匹配取消错误时，仍可能含有其他故障。检查方法见[错误处理](../logging/errors.md)。
-- 等待超时时，`Shutdown` 返回上下文错误。忽略取消信号的业务函数仍可能继续执行。
-- 已关闭实例再次运行会返回 `ErrClosed`。重新启动时，创建新的 Bot。
-- 注入的 API 客户端、HTTP 客户端和日志输出由调用方管理。SDK 不关闭这些外部资源。
-- 处理函数可能并发运行。注册在 `Run` 前完成。
-- `*types.Context` 首次使用后不可复制。处理期间，载荷及公开字段保持只读。
+- SDK 会保留处理函数和错误回调各自的首个错误，在退出时一并返回。即使 `errors.Is` 匹配到取消错误，返回值也可能包含其他错误。检查方法见[错误处理](../logging/errors.md)。
+- 如果等到超时 Bot 还没关闭，`Shutdown` 会返回上下文错误。忽略取消信号的业务函数可能还在运行。
+- 关闭后的 Bot 无法再次运行。调用 `Run` 会收到 `ErrClosed`。需要重启时，重新创建 Bot。
+- 如果 API 客户端、HTTP 客户端或日志输出由你传入，就由你负责关闭。SDK 只关闭自己管理的资源。
+- 在调用 `Run` 之前注册好处理函数。运行期间，处理函数可能并发执行。
+- `*types.Context` 用过之后，请继续使用同一个对象。处理消息时，事件数据和公开字段都按只读数据使用。
 
 ## 另请参阅
 
