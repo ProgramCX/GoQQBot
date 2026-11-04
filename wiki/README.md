@@ -1,8 +1,8 @@
 # GoQQBot 使用文档
 
-用 Go 接收 QQ 机器人事件、回复消息，并将按钮、富媒体和业务服务组合起来。文档对应当前仓库源码，最低 Go 版本为 **1.24.4**。
+GoQQBot 用于接收 QQ 机器人事件和回复消息。你可以将按钮、富媒体与业务服务组合起来。文档对应当前仓库源码。最低 Go 版本为 **1.24.4**，以仓库的 `go.mod` 为准。
 
-目录按 [QQ 官方 API v2](https://bot.q.qq.com/wiki/develop/api-v2/) 的模块划分；每个任务单独一页，以“用途、示例、参数与限制、相关页面”展开，参考 [Gin 的使用文档](https://gin-gonic.com/zh-cn/docs/logging/write-log/)组织方式。本文档介绍 SDK 的实际调用，不复制整份官方字段表。
+目录按 [QQ 官方 API v2](https://bot.q.qq.com/wiki/develop/api-v2/) 划分模块。每页介绍一项任务，组织方式参考 [Gin 的使用文档](https://gin-gonic.com/zh-cn/docs/logging/write-log/)。内容以 SDK 调用为主。完整字段表见官方文档。
 
 ## 开始使用
 
@@ -13,6 +13,8 @@
 
 ## 起步指南
 
+按接入阶段查找配置和运行方法。
+
 | 主题 | 页面 |
 | --- | --- |
 | 启动接入 | [安装](getting-started/installation.md)、[快速开始](getting-started/quick-start.md) |
@@ -22,6 +24,8 @@
 | SDK 配置与生命周期 | [配置参考](getting-started/configuration.md)、[运行与关闭](getting-started/lifecycle.md) |
 
 ## 服务端接口
+
+按消息场景或管理任务查找接口。
 
 | 官方模块 | 文档 |
 | --- | --- |
@@ -39,20 +43,36 @@
 
 ## 日志、业务接入和验收
 
+完成接入后，可按业务需要查看以下页面。
+
 - [日志概述](logging/README.md)、[写入日志文件](logging/write-log.md)、[错误与 panic](logging/errors.md)。
 - [业务服务接入](advanced/business-integration.md)、[原始 API 与字段扩展](advanced/raw-api.md)、[测试消息发送](advanced/testing.md)。
 - [运行示例与人工验收](examples/README.md)、[常见问题](faq/README.md)、[SDK 覆盖范围](reference/coverage.md)。
 
-管理类模块尚未封装的接口会明确标注，并给出官方入口或应用层原始调用示例；不能据此理解为 SDK 已完整实现。平台权限、消息审核、真实客户端显示及接口配额由 QQ 平台决定。
+管理类文档标明尚未封装的接口。对应条目提供官方入口或应用层调用示例。
 
 ## 文档维护
 
-完整侧边导航见 [_Sidebar.md](_Sidebar.md)。所有 Go 代码块是独立编译单元，`package guide` 示例可放入业务包；标注完整程序的 `package main` 示例可单独运行。参数通过函数参数或本地配置提供，不需要猜测省略的变量。
+完整侧边导航见 [_Sidebar.md](_Sidebar.md)。Go 代码块均可独立编译。
 
-在仓库根目录运行以下命令，检查内部链接、代码围栏，并把 Go 示例放入带本地 `replace` 的临时模块中编译；不会运行示例中的机器人连接或发消息。
+- `package guide` 示例可放入业务包。
+- 标注完整程序的 `package main` 示例可单独运行。
+- 示例通过函数参数或本地配置接收参数。
+
+在仓库根目录运行以下命令。脚本检查链接和代码围栏。Go 示例放入带本地 `replace` 的临时模块中编译。
 
 ```sh
 python wiki/_tools/check_docs.py
 ```
 
-编译通过只证明示例与当前 SDK 一致，不等于 QQ 实机联调通过。维护规范另见 [SDK rules](../.codex/rules/go-sdk.md)，历史核对记录保留在 [docs](../docs/api-coverage.md)。
+[SDK rules](../.codex/rules/go-sdk.md)记录项目维护规范。历史核对记录见 [docs](../docs/api-coverage.md)。
+
+## 注意事项
+
+- 管理类示例中的原始调用不代表 SDK 已提供完整封装。
+- 平台权限、消息审核、客户端显示及接口配额由 QQ 平台决定。
+- 检查脚本不连接机器人，也不发消息。编译通过只表示示例与当前 SDK 兼容。QQ 实机联调需另外执行。
+
+## 另请参阅
+
+[文档风格指南](STYLE.md)

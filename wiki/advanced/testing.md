@@ -1,8 +1,8 @@
 # 测试消息发送
 
-单元测试应注入 HTTP 替身，不使用真实凭证。下面的完整示例验证回复是否发往群消息路径，并检查被动回复来源及正文。
+注入 HTTP 替身即可离线测试发送消息。下面的示例检查发送路径是否指向群聊。示例也会校验被动回复的来源和正文。
 
-保存为业务项目的 `reply_test.go`，运行 `go test ./...`。临时令牌和返回 ID 仅为测试数据。
+将示例保存为业务项目的 `reply_test.go`，运行 `go test ./...`。
 
 ```go
 package guide
@@ -68,9 +68,11 @@ func TestGroupReply(t *testing.T) {
 }
 ```
 
-注入的 HTTP 客户端同时用于令牌刷新和 API 调用，因此替身需要处理两种请求。SDK 不替调用方关闭注入客户端管理的资源。
+注入的 HTTP 客户端同时负责令牌刷新和 API 调用。HTTP 替身需要覆盖这两类请求。
 
 ## 测试分层
+
+按验证目标选择测试环境。实际客户端行为见[示例程序与验收](../examples/README.md)。
 
 | 层次 | 验证内容 | 是否需要机器人 |
 | --- | --- | --- |
@@ -79,10 +81,15 @@ func TestGroupReply(t *testing.T) {
 | 事件接入 | 网关 Hello、认证、心跳、恢复或 Webhook 验签 | 否，可用本地服务器 |
 | 客户端验收 | 按钮行为、媒体显示、移动端兼容、平台权限 | 是 |
 
-本仓库常规检查为 `go test ./...`、`go vet ./...`。Windows 运行 `go test -race ./...` 需要可用的 C 编译器，并启用 CGO；检查未执行时不要在验收记录中标为通过。
+仓库的常规检查是 `go test ./...` 和 `go vet ./...`。
+
+## 注意事项
+
+- 单元测试使用测试凭证。示例中的临时令牌和返回 ID 均为测试数据。
+- SDK 不会关闭注入客户端管理的资源。调用方负责资源回收。
+- Windows 上运行 `go test -race ./...` 需要可用的 C 编译器和 CGO。
+- 验收记录只标记实际执行并通过的检查。
 
 ## 另请参阅
 
-- [示例程序与验收](../examples/README.md)
-- [消息类型](../server-api/messages/types/README.md)
-- [业务接入](business-integration.md)
+[示例程序与验收](../examples/README.md) · [消息类型](../server-api/messages/types/README.md) · [业务接入](business-integration.md)
