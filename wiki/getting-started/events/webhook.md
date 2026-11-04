@@ -1,8 +1,10 @@
 # 通过 Webhook 接收事件
 
-Webhook 模式适合有公网 HTTPS 回调地址的业务。SDK 内置 HTTP 服务监听 **`POST /webhook`**，负责回调地址验证、普通事件 Ed25519 验签及入队确认。
+Webhook 适合有公网 HTTPS 回调地址的业务。SDK 监听 **`POST /webhook`**。SDK 验证回调地址、校验普通事件的 Ed25519 签名，并确认事件入队。
 
 ## 配置监听
+
+配置 `webhook` 模式后，SDK 会启动 HTTP 服务。
 
 ```yaml
 bot:
@@ -23,13 +25,15 @@ runtime:
   shutdownTimeout: 15s
 ```
 
-使用[快速开始](../quick-start.md)同一份 Go 程序，替换配置即可。平台管理端填写对外地址，例如 `https://bot.example.com/webhook`，并选择要接收的事件。
+沿用[快速开始](../quick-start.md)的 Go 程序，替换配置。在平台管理端填入公网回调地址，如 `https://bot.example.com/webhook`。选择要接收的[事件](README.md)。
 
-SDK 监听明文 HTTP；通过反向代理或负载均衡终止 HTTPS，并保留原始请求正文及签名请求头。当前没有公开配置来更改回调路径，也没有内置健康检查路由；不要把根路径当作回调地址。
+    QQ 平台 --HTTPS--> 反向代理 --HTTP--> POST /webhook
+
+
 
 ## 验证及响应
 
-平台的 `op=13` 回调地址验证由 SDK 自动响应。普通事件需通过 Ed25519 签名验证，再接受 `op=0` 派发。
+SDK 自动响应 `op=13` 回调地址验证。普通 `op=0` 事件通过 Ed25519 验签后入队。
 
 | 情况 | 当前 HTTP 行为 |
 | --- | --- |
@@ -41,13 +45,18 @@ SDK 监听明文 HTTP；通过反向代理或负载均衡终止 HTTPS，并保�
 | 队列已满或停止接收 | `503` |
 | 成功入队 | `200`，正文 `{"op":12}` |
 
-成功入队的 ACK 不代表业务已经执行成功。业务函数由共享线程池异步执行；其错误或 panic 通过[错误观察入口](../../logging/errors.md)报告，而不是改写已经返回的平台 ACK。
 
-HTTP 读写超时各为 5 秒；关闭时使用 `runtime.shutdownTimeout` 等待。平台重复投递需要业务自行幂等；SDK 没有跨进程事件去重存储。
+
+
+
+## 注意事项
+
+- SDK 监听明文 HTTP。反向代理或负载均衡负责终止 HTTPS。转发时保留原始正文和签名请求头。
+- 回调路径固定为 `/webhook`，公开配置不提供路径选项。SDK 没有内置健康检查路由，根路径也接收不到回调。
+- 确认响应（ACK）只表示事件已入队。共享线程池异步执行业务函数。错误或 panic 由[错误观察入口](../../logging/errors.md)报告。已返回的 ACK 不会改变。
+- SDK 为 HTTP 读取和写入各设 5 秒超时。关闭等待时长取自 `runtime.shutdownTimeout`。
+- SDK 没有跨进程去重存储。业务需自行处理重复投递。
 
 ## 另请参阅
 
-- [事件路由](routing.md)
-- [运行与关闭](../lifecycle.md)
-- [官方 Webhook 回调及验证](https://bot.q.qq.com/wiki/develop/api-v2/dev-prepare/interface-framework/event-emit.html)
-- [官方 Ed25519 签名算法](https://bot.q.qq.com/wiki/develop/api-v2/dev-prepare/interface-framework/sign.html)
+[事件路由](routing.md) · [运行与关闭](../lifecycle.md) · [官方 Webhook 回调及验证](https://bot.q.qq.com/wiki/develop/api-v2/dev-prepare/interface-framework/event-emit.html) · [官方 Ed25519 签名算法](https://bot.q.qq.com/wiki/develop/api-v2/dev-prepare/interface-framework/sign.html)
