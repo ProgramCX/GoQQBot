@@ -1,8 +1,10 @@
 # 引用与撤回消息
 
-被动回复来源、展示引用索引和撤回消息 ID 各自用途不同。不要把三者都存成一个没有语义的 `id`。
+被动回复来源、展示引用索引和撤回消息 ID 用途不同。分别保存三者可避免混用。
 
 ## 先区分标识
+
+按目标选择对应的标识。
 
 | 标识 | 来源 | 用途 |
 | --- | --- | --- |
@@ -11,11 +13,11 @@
 | 被引用消息 `ref_msg_idx` | `m.MessageScene.ReferencedIndex()` | 读取平台提供的引用上下文 |
 | 机器人发送结果 `id` | `result.ID` | 撤回刚发送的消息 |
 | 机器人展示索引 `ref_idx` | `result.ExtInfo.RefIndex` | 后续展示引用该机器人消息 |
-| 交互信封 `id` | `ctx.Payload.ID` | 交互消息回复的 `event_id`，不同于交互 ACK 使用的 `d.id` |
+| 交互信封 `id` | `ctx.Payload.ID` | 交互消息回复的 `event_id`，不同于[交互 ACK](interactions/button-callbacks.md)使用的 `d.id` |
 
 ## 引用当前接收消息
 
-以下处理函数在没有展示索引时退回普通回复，不猜测或伪造索引。
+有展示索引时设置引用。没有索引时退回普通回复，避免猜测或伪造索引。
 
 ```go
 package guide
@@ -38,11 +40,11 @@ func ReplyWithReference(ctx *types.Context) error {
 }
 ```
 
-`MessageScene` 为 nil 时其 `MessageIndex` 方法安全返回空串。`Reference` 只设置展示引用，不改变被动回复所用的 `msg_id`。
+`Reference` 只设置展示引用，不改变被动回复使用的 `msg_id`。
 
 ## 发送后撤回机器人回复
 
-以下单聊或群聊处理函数演示获取发送 ID，然后立即撤回这次回复。实际业务通常保存 ID，在明确的业务动作中撤回。
+下面的单聊或群聊处理函数取出发送 ID，随即撤回回复。业务通常保存 ID，在明确的业务动作中撤回。
 
 ```go
 package guide
@@ -61,13 +63,20 @@ func SendAndRecall(ctx *types.Context) error {
 }
 ```
 
-`Context.Recall` 使用当前会话；后台业务可使用 `Client.RecallMessage(ctx, target, messageID)` 指定单聊或群聊目标。它不会默认撤回当前接收消息，也不会从 REFIDX 推算消息 ID。
+`Context.Recall` 使用当前会话。后台业务可用 `Client.RecallMessage(ctx, target, messageID)` 指定单聊或群聊目标。
 
 ## 权限和引用可靠性
 
-单聊只能撤回机器人消息；群聊撤回成员消息需要机器人管理员权限。两分钟窗口及最终资格由 QQ 检查。频道撤回使用[频道专用旧入口](channel/messages.md)，不在 Context.Recall 的支持范围内。
+按发送场景选撤回入口。频道撤回使用[频道专用旧入口](channel/messages.md)。
 
-平台可能在多级引用中下发不一致的 `msg_idx/ref_msg_idx`、`TMP_` 索引或折叠后的文本摘要。SDK 原样保留，不承诺全局稳定 ID 或完整引用链恢复。因此业务桥接、消息关联和历史索引不能只依赖这些展示索引。
+## 注意事项
+
+- `MessageScene` 为 nil 时，`MessageIndex` 返回空串。
+- `Context.Recall` 不默认撤回接收消息，也不从 REFIDX 推算消息 ID。
+- 单聊只允许撤回机器人消息。群聊撤回成员消息需要机器人管理员权限。QQ 按平台规则检查两分钟窗口和最终资格。
+- `Context.Recall` 不支持频道撤回。
+- 多级引用可能收到不一致的 `msg_idx/ref_msg_idx`、`TMP_` 索引或折叠后的文本摘要。SDK 原样保留。
+- SDK 不保证全局稳定 ID 或恢复完整引用链。展示索引不足以支撑业务桥接、消息关联和历史索引。
 
 ## 另请参阅
 
