@@ -1,6 +1,6 @@
 # 查询和配置机器人
 
-查询机器人资料和管理平台资源可用官方原始 API。SDK 已提供[访问凭证](../../getting-started/credentials.md)和网关发现。
+查询机器人资料或管理 QQ 平台资源，可以直接调用官方接口。SDK 已经提供[访问凭证](../../getting-started/credentials.md)和查询网关地址的功能。
 
 | 官方能力 | HTTP 接口 | 使用方式 |
 | --- | --- | --- |
@@ -11,7 +11,7 @@
 
 ## 查询机器人资料
 
-应用可按需定义响应结构。`Profile` 只读取业务需要的字段，平台新增字段不影响现有解码。
+可以自己定义接收结果的结构体。下面的 `Profile` 只接收业务用到的字段。QQ 后续加字段时，已有代码仍能读取原来的字段。
 
 ```go
 package guide
@@ -44,7 +44,7 @@ func LoadProfile(ctx context.Context, client *api.Client) (*Profile, error) {
 }
 ```
 
-`api.Client` 负责认证和解析平台错误。应用解释资料字段，并管理缓存和刷新频率。
+`api.Client` 会处理认证，并把 QQ 返回的错误解析出来。资料字段怎么用、要不要缓存、多久刷新一次，由应用决定。
 
 ## 注意事项
 

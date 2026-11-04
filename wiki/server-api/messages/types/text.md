@@ -20,7 +20,7 @@ func ReplyText(ctx *types.Context) error {
 }
 ```
 
-路由负责解析命令参数。`ctx.Text()` 返回规范化的输入文字。需要保留空白时，读取 `ctx.Message()` 的 `Content`。
+路由负责解析命令参数。`ctx.Text()` 返回去掉首尾空白的文字。需要保留空白时，读取 `ctx.Message()` 的 `Content`。
 
 ## 复用消息构造结果
 

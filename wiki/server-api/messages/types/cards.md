@@ -39,7 +39,7 @@ func ReplyArticle(ctx *types.Context, articleURL, pictureURL string) error {
 
 - 图文卡片、[Markdown 图片](markdown.md)、接收的 ARKData 和[旧 ARK 模板](ark.md)各用不同消息结构。
 - `Card` 仅支持 QQ 单聊和群聊。向频道发送会返回本地错误。
-- 平台仍会审核内容、域名和终端展示。示例需传入真实可访问的业务地址。
+- 卡片内容、域名及客户端展示仍由 QQ 平台决定。运行示例时，传入可访问的网页和图片地址。
 - 用 `message.New(message.CARD).WithField("card", ...)` 可扩展其他卡片字段。这个入口不表示 SDK 已实现或实测所有卡片类型。见[扩展消息字段](../../../advanced/raw-api.md)。
 
 ## 另请参阅
