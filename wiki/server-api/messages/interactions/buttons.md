@@ -1,6 +1,6 @@
 # 发送按钮
 
-使用 `message.Markdown(...).Buttons(...)` 在消息下方显示操作按钮。下面的 `menu` 是完整处理函数，可注册给群聊或单聊命令。
+用 `message.Markdown(...).Buttons(...)` 在消息下方显示按钮。下面的 `menu` 可注册给群聊或单聊命令。
 
 ```go
 package guide
@@ -20,9 +20,11 @@ func menu(ctx *types.Context) error {
 }
 ```
 
-命令按钮默认预填输入框。上例的 `AutoSend` 在单聊中保留自动发送，在群聊和频道中默认降级为预填。回调按钮需要另行注册 [按钮处理函数](button-callbacks.md)，链接按钮只在客户端跳转。
+命令按钮默认预填输入框。回调按钮需要注册 [按钮处理函数](button-callbacks.md)。链接按钮只在客户端跳转。
 
 ## 布局与标识
+
+使用自动布局，或用 `Row` 自定义每行。
 
 | 配置 | 含义 |
 | --- | --- |
@@ -33,11 +35,9 @@ func menu(ctx *types.Context) error {
 | `KeyboardTemplate(id)` | 引用平台侧已配置的模板键盘 |
 | `ID(id)` | 指定稳定按钮 ID，便于回调匹配 |
 
-最多五行，每行最多五个按钮。默认两列最多十个按钮；十四个按钮需要 `Columns(3)`。超限会在 `Build` 或发送前返回错误，不会自动加列、丢弃按钮或拆成多条消息。
+省略 ID 时，SDK 在单个键盘内生成不冲突的布局 ID。要长期识别业务动作，可以显式设置 ID。
 
-`Buttons`、`Row` 和原始或模板键盘是互斥配置。省略 ID 时在单个键盘内生成不冲突的布局 ID；需要长期识别业务动作时应显式设置 ID。显示文字最多十个字符。
-
-在上面的处理函数中，可用以下表达式替换消息构造部分：
+在上面的处理函数中，可用以下表达式替换消息构造部分。
 
 ```text
 message.Markdown("选择操作").
@@ -45,30 +45,36 @@ message.Markdown("选择操作").
     Row(button.Link("官网", "https://example.com"))
 ```
 
-这是构造表达式，需传入 `ctx.Reply`，不会单独发送。`/bind ` 末尾空格会保留。
+构造表达式不发送消息。将表达式传给 `ctx.Reply` 即可发送。`/bind ` 的末尾空格会保留。
 
 ## 样式、权限和二次确认
 
-| 方法 | 用途与限制 |
-| --- | --- |
-| `Primary()`、`Style(style)` | 设置展示样式，实际颜色由客户端决定 |
-| `Visited(label)` | 设置点击后的展示文字 |
-| `Users(ids...)` | 仅指定平台用户标识可用，不是 QQ 号码 |
-| `AdminOnly()`、`All()` | 管理员可用或所有人可用 |
-| `Roles(ids...)` | 指定频道身份组，仅频道及频道私信场景可用 |
-| `Group(id)` | 回调按钮互斥分组，命令或链接按钮不能设置 |
-| `Confirm(text)` | 使用平台默认按钮标题的确认弹窗 |
-| `Confirmation(modal)` | 自定义 `interaction.ButtonModal`，包括确认及取消标题 |
-| `UnsupportedTips(text)` | 客户端不能展示按钮时的提示 |
-| `ClickLimit(n)` | 旧平台字段，已弃用；业务幂等不能依赖它 |
+按操作用途选择样式、适用用户和确认方式。
 
-确认正文最多四十个字符、不能包含 HTTP(S) URL；确认和取消标题分别最多四个字符。按钮的展示权限不能替代业务授权，服务端仍应校验操作者和目标资源权限。
+| 方法 | 用途 |
+| --- | --- |
+| `Primary()`、`Style(style)` | 设置展示样式 |
+| `Visited(label)` | 设置点击后的展示文字 |
+| `Users(ids...)` | 允许指定平台用户使用 |
+| `AdminOnly()`、`All()` | 管理员可用或所有人可用 |
+| `Roles(ids...)` | 指定频道身份组 |
+| `Group(id)` | 将回调按钮放进互斥分组 |
+| `Confirm(text)` | 使用平台默认按钮标题的确认弹窗 |
+| `Confirmation(modal)` | 自定义 `interaction.ButtonModal` 的确认及取消标题 |
+| `UnsupportedTips(text)` | 设置客户端无法展示按钮时的提示 |
+| `ClickLimit(n)` | 设置旧平台字段 |
 
 ## 跨场景使用
 
-`AutoSend`、`Prefill`、`Reply`、`PickImage`、`ChooseChannel` 只适用于命令动作。`Reply()` 表示发送命令时带原消息引用；`PickImage()` 请求单聊选图器；`ChooseChannel()` 请求频道中的频道选择器。
+为命令按钮选择操作方式。
 
-不支持的场景默认移除自动发送、选图器或频道选择器提示，保留预填命令。添加 `Outgoing.Strict()` 会让不支持的配置返回错误，例如：
+- `AutoSend()` 请求点击后自动发送。
+- `Prefill()` 请求预填输入框。
+- `Reply()` 让发送的命令带原消息引用。
+- `PickImage()` 请求单聊选图器。
+- `ChooseChannel()` 请求频道中的频道选择器。
+
+需要场景不支持时返回错误，可添加 `Outgoing.Strict()`。
 
 ```text
 message.Markdown("选择图片").Strict().Buttons(
@@ -76,13 +82,23 @@ message.Markdown("选择图片").Strict().Buttons(
 )
 ```
 
-权限不会降级：带频道身份组限制的按钮在群聊中仍返回错误，不会自动变成所有人可用。原始键盘中的已知提示字段也遵循同一场景规则；未知扩展字段会保留。
+链式方法返回独立值，构造器保持不变。应用可复用菜单模板。高级字段可通过 `button.Raw`、`Keyboard` 或 [`WithField("keyboard", value)`](../../../advanced/raw-api.md) 传入。
 
-构造器不可变，链式方法返回独立值；可以复用菜单模板。通过 `button.Raw`、`Keyboard` 或 `WithField("keyboard", value)` 接入高级协议字段时，仍会校验已知的不合法组合。
+## 注意事项
+
+- 键盘最多五行，每行最多五个按钮。默认两列最多十个（5 行 × 2 列）。十四个按钮需要 `Columns(3)`（5 行 × 3 列最多十五个）。
+- 布局超限时，`Build` 或发送入口返回错误。SDK 不自动加列、丢弃按钮或拆成多条消息。
+- `Buttons`、`Row`、原始键盘和模板键盘只能选一种。按钮显示文字最多十个字符。
+- 客户端决定实际显示颜色。`Users` 接收平台用户标识，QQ 号码不适用。
+- `Roles` 仅支持频道和频道私信。带频道身份组限制的按钮在群聊中返回错误。SDK 不会改成所有人可用。
+- `Group` 仅支持回调按钮。命令和链接按钮不支持该配置。
+- 确认正文最多四十个字符，包含 HTTP(S) URL 会超出支持范围。确认和取消标题分别最多四个字符。
+- 展示权限只控制按钮展示。服务端仍要校验操作者和目标资源权限。
+- `ClickLimit` 已弃用。业务幂等需要独立实现。
+- 上述五种操作只适用于命令动作。上例的 `AutoSend` 在单聊保留自动发送，在群聊和频道退回预填。
+- 场景不支持时，SDK 保留预填命令。自动发送、选图器或频道选择器提示会移除。
+- 原始键盘中的已知提示字段也受场景规则约束。SDK 保留未知扩展字段，并校验已知的不合法组合。
 
 ## 另请参阅
 
-- [按钮回调与 ACK](button-callbacks.md)
-- [文本交互](text.md)
-- [QQ 官方：单聊发送 keyboard 字段](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/v2_users_user_openid_messages.post.html)
-- [QQ 官方：群聊发送 keyboard 字段](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/v2_groups_group_openid_messages.post.html)
+[按钮回调与 ACK](button-callbacks.md) · [文本交互](text.md) · [QQ 官方：单聊发送 keyboard 字段](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/v2_users_user_openid_messages.post.html) · [QQ 官方：群聊发送 keyboard 字段](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/v2_groups_group_openid_messages.post.html)

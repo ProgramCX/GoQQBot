@@ -1,6 +1,6 @@
-# 消息交互
+# 使用消息交互
 
-用按钮和消息正文中的可点击指令，让用户触发业务操作。先选择交互方式，再选择处理入口：回调按钮、普通命令和网页跳转产生的行为不同。
+按钮和可点击指令可以触发业务操作。按点击后的行为选择处理入口。
 
 | 需要实现的行为 | 构造入口 | 接收入口 |
 | --- | --- | --- |
@@ -13,7 +13,7 @@
 
 ## 准备订阅
 
-WebSocket 配置同时订阅消息与互动事件；Webhook 在开放平台配置相应订阅。
+[WebSocket](../../../getting-started/events/websocket.md) 同时订阅消息与互动事件。[Webhook](../../../getting-started/events/webhook.md) 在开放平台配置对应订阅。
 
 ```yaml
 connection:
@@ -24,8 +24,6 @@ connection:
       - INTERACTION
 ```
 
-配置不会替你申请权限、创建菜单或更改平台订阅。
-
 ## 按任务阅读
 
 - [发送按钮、布局和权限](buttons.md)
@@ -35,20 +33,28 @@ connection:
 
 ## 交互与消息的区别
 
-消息回复是向会话发送内容，ACK 是向平台确认互动处理结果；二者不能互相替代。回调按钮应及时 ACK，再执行耗时工作。SDK 不自动选择成功响应，业务需要先完成权限判断。
+回复会向会话发消息。ACK 向平台确认互动处理结果。先判断业务权限，再及时 ACK，最后处理耗时操作。
 
-具体按钮或菜单 ID 的处理函数优先于类型处理函数，最后才进入 `OnEvent(message.INTERACTION_CREATE, ...)`；每个互动事件只选择一个处理函数。
+每个互动事件只选择一个处理函数。
 
-完整人工验收示例在仓库根目录运行：
+- 先找匹配具体按钮或菜单 ID 的处理函数。
+- 再找匹配事件类型的处理函数。
+- 最后使用 `OnEvent(message.INTERACTION_CREATE, ...)`。
+
+在仓库根目录运行完整人工验收示例。
 
 ```sh
 go run ./examples/interactions -config config.yaml
 ```
 
-在单聊发送 `/interact`，或在群聊按平台要求艾特机器人后发送 `/interact`。按钮展示、平台权限与客户端兼容性需要真实 QQ 验证，本地测试不能替代实机验收。
+在单聊发送 `/interact`。群聊按平台要求艾特机器人后发送同一命令。
+
+## 注意事项
+
+- SDK 配置不会替应用申请权限、创建菜单或更改平台订阅。
+- 消息回复和 ACK 分属不同操作，无法互相替代。SDK 不自动选择成功响应。
+- 按钮展示、平台权限和客户端兼容性需要在真实 QQ 中验收。本地测试无法验证这些结果。
 
 ## 另请参阅
 
-- [消息收发](../README.md)
-- [QQ 官方：消息交互概述](https://bot.q.qq.com/wiki/develop/api-v2/server-inter/message/trans/overview.html)
-- [QQ 官方：互动事件](https://bot.q.qq.com/wiki/develop/api-v2/autogen/event/interaction_create.html)
+[消息收发](../README.md) · [QQ 官方：消息交互概述](https://bot.q.qq.com/wiki/develop/api-v2/server-inter/message/trans/overview.html) · [QQ 官方：互动事件](https://bot.q.qq.com/wiki/develop/api-v2/autogen/event/interaction_create.html)

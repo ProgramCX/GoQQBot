@@ -1,10 +1,10 @@
-# 快捷菜单与指令面板
+# 接收快捷菜单与指令面板事件
 
-当前 SDK 可以接收快捷菜单互动，并按 `feature_id` 分发。**尚未提供菜单查询更新、指令面板创建及增删改查的领域封装。** 接收到回调，不等于 SDK 已替你创建平台资源。
+SDK 可以接收快捷菜单互动，并按 `feature_id` 分发。
 
 ## 接收已配置的菜单操作
 
-先在官方支持的方式中配置菜单，再在 `bot.Run` 前注册相同的功能 ID：
+先按官方方式配置菜单。在 `bot.Run` 前注册相同的功能 ID。
 
 ```go
 package guide
@@ -32,17 +32,20 @@ func registerMenu(bot *goqqrobot.Bot) {
 }
 ```
 
-`OnMenu` 仅匹配类型 12 的 `feature_id`。需要统一处理多个功能时，注册 `OnInteraction(interaction.InteractionTypeMenu, handler)`；具体 ID 处理函数更优先。
+`OnMenu` 仅匹配平台类型 12 的 `feature_id`。用 `OnInteraction(interaction.InteractionTypeMenu, handler)` 统一处理多个功能。具体 ID 的处理函数优先，见 [回调路由](button-callbacks.md)。
 
 ## 命令注册与平台资源
 
-`OnCommand("help", eventType, handler)` 注册本进程的消息路由，不会创建 QQ 菜单或指令面板。命令按钮让用户发送消息，菜单操作则可能产生类型 12 互动，处理方式不能混用。
+`OnCommand("help", eventType, handler)` 注册本进程的 [消息路由](../../../getting-started/events/routing.md)。命令按钮让用户发送消息。菜单操作可能产生类型 12 互动，应走互动处理入口。
 
-未封装的管理接口可以通过 `Client.Request` 显式调用，但调用方需要自行根据官方接口定义请求及响应模型、权限和错误处理；这不算已具备完整类型化 SDK。
+用 [`Client.Request`](../../../advanced/raw-api.md) 显式调用未封装的管理接口。按官方接口定义请求和响应模型，并处理权限与错误。
+
+## 注意事项
+
+- SDK 尚未封装菜单查询与更新。指令面板（command panel）的增删改查也尚未封装。
+- 收到菜单回调只表示互动已送达。`OnCommand` 和回调注册均不会创建 QQ 菜单或指令面板。
+- `Client.Request` 提供原始请求能力。调用方自建模型与类型化 SDK 封装是两回事。
 
 ## 另请参阅
 
-- [按钮回调、ACK 与路由优先级](button-callbacks.md)
-- [SDK 接口覆盖清单](../../../../docs/api-coverage.md)
-- [QQ 官方：互动事件](https://bot.q.qq.com/wiki/develop/api-v2/autogen/event/interaction_create.html)
-- [QQ 官方 API 导航：机器人、全局菜单与指令面板](https://bot.q.qq.com/wiki/develop/api-v2/)
+[按钮回调、ACK 与路由优先级](button-callbacks.md) · [SDK 接口覆盖清单](../../../../docs/api-coverage.md) · [QQ 官方：互动事件](https://bot.q.qq.com/wiki/develop/api-v2/autogen/event/interaction_create.html) · [QQ 官方 API 导航：机器人、全局菜单与指令面板](https://bot.q.qq.com/wiki/develop/api-v2/)
