@@ -1,6 +1,6 @@
 # 示例程序与人工验收
 
-在 SDK 仓库根目录运行示例，可手工验收机器人行为。业务项目按[快速开始](../getting-started/quick-start.md)导入 SDK。配置文件填写自己的凭证。
+在 SDK 仓库根目录运行示例，可以用 QQ 客户端验证消息和按钮的效果。示例配置使用自己的机器人凭证。若要在独立项目中接入 SDK，请参考[快速开始](../getting-started/quick-start.md)。
 
 ## 选择示例
 
@@ -39,7 +39,7 @@ go run ./examples/media -config config.yaml -debug-events `
 | `-config` | 机器人 YAML 配置 |
 | `-debug-events` | 输出事件类型和路由诊断，不输出完整消息载荷 |
 | `-image-file`、`-video-file`、`-voice-file`、`-file-file` | 本地文件分片上传测试 |
-| `-image-url`、`-video-url`、`-voice-url`、`-file-url` | 平台从公网 URL 拉取的上传测试 |
+| `-image-url`、`-video-url`、`-voice-url`、`-file-url` | 测试 QQ 从公网 URL 下载并上传素材 |
 | `-card-url`、`-card-image` | 图文卡片目标页和图片 HTTPS 地址 |
 
 启动后在 QQ 发送 `/media`，再选择操作。
@@ -63,7 +63,7 @@ go run ./examples/media -config config.yaml -debug-events `
 - PowerShell 续行反引号后出现空格时，续行会失败。
 - `example.com` 用来展示格式。测试卡片时换成可访问地址。语音格式、编码和大小以 QQ 当前要求为准。改名为 `.silk` 不会转码。
 - `-image-url` 与 `-image-file` 分别配置。设置其中一个不会补齐另一个。
-- 模拟 HTTP 测试覆盖请求逻辑。客户端效果需单独验收。平台拉取与本地上传使用不同链路。URL 下载失败时，分片上传仍可能成功。
+- **验收范围。** 模拟 HTTP 测试只覆盖请求逻辑，显示效果需在 QQ 客户端验证。URL 上传由 QQ 下载文件，本地分片上传则由 SDK 发送文件。前一种方式失败时，仍可验证后一种方式。
 - 撤回示例只撤回刚发送的机器人回复。删除素材会影响后续使用，验收使用专门的测试素材。示例只在当前进程保存素材引用，不提供业务素材数据库。
 
 ## 另请参阅

@@ -1,14 +1,14 @@
 # GoQQBot 使用文档
 
-GoQQBot 用于接收 QQ 机器人事件和回复消息。你可以将按钮、富媒体与业务服务组合起来。文档对应当前仓库源码。最低 Go 版本为 **1.24.4**，以仓库的 `go.mod` 为准。
+用 GoQQBot 可以接收 QQ 机器人事件、回复消息，也可以把按钮和富媒体接到自己的业务里。阅读时请对照当前仓库源码。项目要求 **Go 1.24.4** 或更高版本，具体以 `go.mod` 为准。
 
-目录按 [QQ 官方 API v2](https://bot.q.qq.com/wiki/develop/api-v2/) 划分模块。每页介绍一项任务，组织方式参考 [Gin 的使用文档](https://gin-gonic.com/zh-cn/docs/logging/write-log/)。内容以 SDK 调用为主。完整字段表见官方文档。
+目录按 [QQ 官方 API v2](https://bot.q.qq.com/wiki/develop/api-v2/) 划分，参考 [Gin 的使用文档](https://gin-gonic.com/zh-cn/docs/logging/write-log/)，每页讲清一项任务。各页通过示例说明 SDK 的用法，完整字段表见官方文档。
 
 ## 开始使用
 
 1. [安装 SDK](getting-started/installation.md)，或使用本地 `replace` 接入尚未发布的工作区。
 2. [运行第一个机器人](getting-started/quick-start.md)，选择 WebSocket 或 Webhook。
-3. [注册命令与普通消息](getting-started/events/routing.md)，按事件类型复用 handler。
+3. [注册命令与普通消息](getting-started/events/routing.md)，让不同类型的事件共用一个处理函数。
 4. [发送 Markdown 和按钮](server-api/messages/interactions/buttons.md)，再接入自己的业务服务。
 
 ## 起步指南
@@ -49,17 +49,17 @@ GoQQBot 用于接收 QQ 机器人事件和回复消息。你可以将按钮、�
 - [业务服务接入](advanced/business-integration.md)、[原始 API 与字段扩展](advanced/raw-api.md)、[测试消息发送](advanced/testing.md)。
 - [运行示例与人工验收](examples/README.md)、[常见问题](faq/README.md)、[SDK 覆盖范围](reference/coverage.md)。
 
-管理类文档标明尚未封装的接口。对应条目提供官方入口或应用层调用示例。
+如果某个管理接口还没有现成的 SDK 方法，对应条目会给出官方文档或直接调用的示例。
 
 ## 文档维护
 
-完整侧边导航见 [_Sidebar.md](_Sidebar.md)。Go 代码块均可独立编译。
+左侧导航来自 [_Sidebar.md](_Sidebar.md)。文档里的 Go 示例均可独立编译：
 
 - `package guide` 示例可放入业务包。
 - 标注完整程序的 `package main` 示例可单独运行。
 - 示例通过函数参数或本地配置接收参数。
 
-在仓库根目录运行以下命令。脚本检查链接和代码围栏。Go 示例放入带本地 `replace` 的临时模块中编译。
+在仓库根目录运行下面的命令，检查链接和代码块。脚本会在临时模块中通过本地 `replace` 引用当前 SDK，再编译 Go 示例。
 
 ```sh
 python wiki/_tools/check_docs.py
