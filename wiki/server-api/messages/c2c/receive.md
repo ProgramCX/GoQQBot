@@ -30,7 +30,7 @@ func RegisterPrivateReceiver(bot *goqqrobot.Bot, consume func(context.Context, s
 
 ## 选择字段
 
-`ctx.Message()` 可直接解码消息，无需 API 客户端，也不执行 I/O。返回的快照归业务持有。修改快照不影响 SDK 载荷。
+`ctx.Message()` 在本地解析已收到的消息，不需要 API 客户端，也不会向 QQ 发请求。返回的是一份独立副本，修改其中的字段不会影响 SDK 内部的数据。
 
 | 字段或方法 | 含义 |
 | --- | --- |
@@ -38,9 +38,9 @@ func RegisterPrivateReceiver(bot *goqqrobot.Bot, consume func(context.Context, s
 | `m.Content` | 平台下发的原始正文，保留空白 |
 | `m.ID` | 当前接收消息的 ID |
 | `m.Author.UserOpenID` / `m.SenderID()` | 单聊发送者标识 |
-| `m.Attachments` | 当前消息直属附件 |
+| `m.Attachments` | 当前消息本身的附件 |
 | `m.Images()` | 当前消息及嵌套引用、转发中的图片附件 |
-| `m.ARK` / `m.MsgElements` | 类型化卡片及递归引用、转发条目 |
+| `m.ARK` / `m.MsgElements` | 卡片数据，以及各层引用和转发条目 |
 
 ## 注意事项
 

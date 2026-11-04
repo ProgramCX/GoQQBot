@@ -1,6 +1,6 @@
 # 单聊富媒体上传
 
-单聊富媒体可先用 `ctx.UploadMedia` 上传，再用普通回复入口发送。SDK 从当前事件确定用户和会话。下例接收业务提供的图片 URL，地址需能被 QQ 下载。
+在单聊里回复图片，可以先用 `ctx.UploadMedia` 上传，再把上传结果交给 `ctx.Reply`。SDK 会从收到的事件里找到用户和会话。下面的例子由业务传入图片 URL。
 
 ```go
 package guide
@@ -46,7 +46,7 @@ func replyImageURL(ctx *types.Context, imageURL string) error {
 
 ## 脱离消息处理器调用
 
-业务服务可以用 API 客户端和明确的会话目标上传。服务无需持有路由器或 SDK Context。由业务选择发送时机。
+在后台服务里，也可以用 API 客户端上传。指定会话目标就行，无需把路由器或 SDK 的 `Context` 传给服务。何时发送由业务决定。
 
 ```go
 package guide
@@ -69,7 +69,7 @@ func uploadUserVideo(op context.Context, client *api.Client, userOpenID, videoUR
 }
 ```
 
-示例函数只上传。函数不构造被动回复来源，也不主动发送。[发送单聊消息](../c2c/send.md)时，可用 `Client.SendReply` 配合真实事件来源。具备平台资格时也可用 `Client.SendMessage`。
+示例函数只上传文件。回复时，发送方要另外提供实际收到的事件作为回复来源。[发送单聊消息](../c2c/send.md)时，可用 `Client.SendReply` 配合真实事件来源。具备平台资格时也可用 `Client.SendMessage`。
 
 ## 错误与重试
 
@@ -80,9 +80,9 @@ func uploadUserVideo(op context.Context, client *api.Client, userOpenID, videoUR
 ## 注意事项
 
 - 将未经验证的地址交给平台，会触发对用户指定地址的下载。
-- SDK 只校验 URL 的基本格式。QQ 下载节点可能访问不到地址，或因超时、格式及审核拒绝请求。
+- SDK 只检查 URL 格式。QQ 需要能访问并下载这个地址。如果下载超时，或文件格式、审核不符合要求，平台可能拒绝请求。
 - 本机路径无法作为公网 URL 上传。URL 上传失败后，SDK 不会自动下载文件或改走本地上传。
-- 上传返回了结果但 err 也不是 nil。此时 HTTP 请求可能已成功，响应解码却失败了。上传任务或主动消息可能已存在。重发可能产生重复。SDK 不自动重试 POST。
+- 如果上传返回了结果但 `err` 也有值，HTTP 请求可能已经成功，只是 SDK 没能读出响应。再次提交前先核对平台是否已创建任务或发送主动消息。直接重发可能产生重复。SDK 不自动重试 POST。
 
 ## 另请参阅
 

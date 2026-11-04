@@ -1,10 +1,10 @@
 # 调用未封装的官方接口
 
-独立服务可以直接用 `api.Client` 调用官方接口。应用无需启动 WebSocket 或 Webhook。`Get`、`Post`、`Put`、`Delete` 和 `Request` 共用访问令牌和 API 错误处理。
+SDK 还没有专用方法时，后台服务可以用 `api.Client` 直接请求 QQ。这个客户端可以单独使用，不用先连 WebSocket 或启动 Webhook。`Get`、`Post`、`Put`、`Delete` 和 `Request` 用的是同一套令牌和错误处理逻辑。
 
 ## 明确路径、方法和响应模型
 
-下面的函数查询[机器人详情](../server-api/robot/README.md)。应用持有返回的原始 JSON，可按需解码字段。
+下面的函数查询[机器人详情](../server-api/robot/README.md)，把 QQ 返回的 JSON 交给你。需要哪些字段，就解析哪些字段。
 
 ```go
 package guide
@@ -32,15 +32,15 @@ func ReadBot(ctx context.Context, client *api.Client) (json.RawMessage, error) {
 | `method` | 使用 `http.MethodGet` 等标准方法常量。PATCH 通过 `Request` 调用。 |
 | `path` | 官方 API 相对路径，如 `/users/@me` |
 | `body` | SDK 将非 nil 的值编码为 JSON。GET 通常传 nil。 |
-| 返回正文 | 由应用持有 |
+| 返回正文 | 可在自己的程序里解析或保存 |
 
-路径参数用 `url.PathEscape` 编码。查询参数用 `url.Values.Encode` 编码。
+把 ID 拼进路径之前，用 `url.PathEscape` 转义。游标等查询参数用 `url.Values.Encode` 编码。
 
 
 
 ## 扩展消息字段
 
-使用 `message.New` 和 `WithField` 构造新增字段。下例借用已支持的[图文卡片](../server-api/messages/types/cards.md)，演示原始字段入口。
+消息里要带上尚未封装的字段时，可以用 `message.New` 和 `WithField` 自己填。下面以已支持的[图文卡片](../server-api/messages/types/cards.md)为例。
 
 ```go
 package guide
@@ -63,16 +63,16 @@ func ReplyRawCard(ctx *types.Context) error {
 }
 ```
 
-`WithField` 会立即序列化字段并保存副本。`Build` 或发送方法会返回构造错误。
+调用 `WithField` 时，SDK 会将字段值编码为 JSON 并保存。后续修改原值不会影响消息。编码失败时，`Build` 或发送方法会返回错误。
 
 ## 注意事项
 
 - `path` 只接收相对路径。直接拼接不可信游标可能改变查询参数。
 - `Client.Request` 会读完整个响应正文。调用时选择响应大小可预期的官方 JSON 接口。下载任意文件可能占用大量内存。
 - 完整记录敏感事件或签名 URL 会泄露敏感数据。
-- 原始接口不管理分页，也不补字段或自动重试。POST 可能已成功，即使响应解码失败。先确认服务端结果，再决定如何恢复。
+- 翻页、补字段和重试都由你的程序决定。如果只是在解析响应时出错，QQ 可能已经处理了 POST。重发前先查这次操作是否成功。
 - 已知消息类型仍校验字段和场景。权限检查同样适用。
-- `msg_id`、`event_id`、`msg_seq`、`is_wakeup` 由专用入口管理。`WithField` 无法覆盖这些字段。
+- `msg_id`、`event_id`、`msg_seq`、`is_wakeup` 由对应的发送方法填写，通过 `WithField` 改不了。
 
 ## 另请参阅
 
