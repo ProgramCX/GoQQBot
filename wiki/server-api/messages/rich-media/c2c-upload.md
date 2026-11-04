@@ -1,6 +1,6 @@
 # 单聊富媒体上传
 
-在单聊消息处理函数中调用 `ctx.UploadMedia`，由当前事件确定用户及会话，随后通过普通回复入口发送。以下函数接收一个由业务提供、可被 QQ 平台下载的公网图片 URL。
+在单聊里回复图片，可以先用 `ctx.UploadMedia` 上传，再把上传结果交给 `ctx.Reply`。SDK 会从收到的事件里找到用户和会话。下面的例子由业务传入图片 URL。
 
 ```go
 package guide
@@ -27,24 +27,26 @@ func replyImageURL(ctx *types.Context, imageURL string) error {
 }
 ```
 
-将此函数用于 `C2C_MESSAGE_CREATE` 的处理器；URL 可来自业务配置或自己的存储服务，不要直接把未验证的任意外部输入交给平台下载。相同处理函数也可用于群聊，上传和发送均保持在当前会话。
+在 `C2C_MESSAGE_CREATE` 的处理函数里调用示例。URL 可来自业务配置或自有存储。同一个函数也适用于[群聊](group-upload.md)。上传与发送都使用当前会话。
 
 ## 参数与协议
+
+单聊上传使用 `POST /v2/users/{user_openid}/files`。
 
 | 字段 | 说明 |
 | --- | --- |
 | `FileType` | 图片、视频、语音或文件，使用对应 `FileType` 常量 |
-| `URL` | 平台下载的 HTTP(S) 地址，不能同时设置 UploadID 或 FileData |
-| `SrvSendMsg` | 默认 false；true 请求直接主动发送 |
-| `FileName` | 使用 UploadID 或 FileData 时必填，URL 模式无需自行推断远端文件名 |
+| `URL` | 平台下载的 HTTP(S) 地址。从 URL、`UploadID`、`FileData` 中三选一。 |
+| `SrvSendMsg` | 默认为 `false`。设为 `true` 请求直接发送主动消息（proactive message）。 |
+| `FileName` | 用 `UploadID` 或 `FileData` 时填写。URL 模式无需自行推断远端文件名。 |
 
-底层上传请求为 `POST /v2/users/{user_openid}/files`。SDK 校验 URL 的基本格式，但不能证明 QQ 下载节点可访问该主机或接受其内容。平台可能因下载失败、上传超时、格式或审核拒绝请求。
 
-如果图片来自本地，请使用 [分片上传](multipart-upload.md)，不要把本机文件路径当成 URL。SDK 不会在 URL 上传失败后自动下载和改走本地上传。
+
+本地图片使用[分片上传](multipart-upload.md)。
 
 ## 脱离消息处理器调用
 
-业务服务无需持有路由器或 SDK Context。使用自己持有的 API 客户端及明确会话目标即可上传，之后再由业务决定发送时机。
+在后台服务里，也可以用 API 客户端上传。指定会话目标就行，无需把路由器或 SDK 的 `Context` 传给服务。何时发送由业务决定。
 
 ```go
 package guide
@@ -67,16 +69,21 @@ func uploadUserVideo(op context.Context, client *api.Client, userOpenID, videoUR
 }
 ```
 
-此函数仅上传，不构造被动回复来源，也不主动发送。后续发送可使用 `Client.SendReply` 配合真实事件来源，或按平台资格显式使用 `Client.SendMessage`。
+示例函数只上传文件。回复时，发送方要另外提供实际收到的事件作为回复来源。[发送单聊消息](../c2c/send.md)时，可用 `Client.SendReply` 配合真实事件来源。具备平台资格时也可用 `Client.SendMessage`。
 
 ## 错误与重试
 
-输入不合法可用 `errors.Is(err, api.ErrInvalidMedia)` 判断。平台错误保留为 `*api.APIError`，通过 `errors.As` 获取 HTTP 状态、错误码和 trace；平台提供的说明可显式读取 `DiagnosticMessage()`。
+用 `errors.Is(err, api.ErrInvalidMedia)` 判断输入是否合法。平台错误保留为 `*api.APIError`。用 `errors.As` 读取 HTTP 状态、错误码和 trace。`DiagnosticMessage()` 可读取平台提供的说明。
 
-如果上传返回非 nil 结果及非 nil 错误，可能是 HTTP 成功后的响应解码失败；任务甚至主动消息可能已存在，不要盲目重发。SDK 不自动重试 POST。
+
+
+## 注意事项
+
+- 将未经验证的地址交给平台，会触发对用户指定地址的下载。
+- SDK 只检查 URL 格式。QQ 需要能访问并下载这个地址。如果下载超时，或文件格式、审核不符合要求，平台可能拒绝请求。
+- 本机路径无法作为公网 URL 上传。URL 上传失败后，SDK 不会自动下载文件或改走本地上传。
+- 如果上传返回了结果但 `err` 也有值，HTTP 请求可能已经成功，只是 SDK 没能读出响应。再次提交前先核对平台是否已创建任务或发送主动消息。直接重发可能产生重复。SDK 不自动重试 POST。
 
 ## 另请参阅
 
-- [富媒体概述](README.md)
-- [本地分片上传](multipart-upload.md)
-- [QQ 官方：单聊富媒体上传](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/v2_users_user_openid_files.post.html)
+[富媒体概述](README.md) · [本地分片上传](multipart-upload.md) · [QQ 官方：单聊富媒体上传](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/v2_users_user_openid_files.post.html)

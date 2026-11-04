@@ -1,8 +1,10 @@
-# 分享链接与机器人事件
+# 分享机器人链接并接收事件
 
-需要区分邀请来源时，可以通过官方分享接口携带 `callback_data`。SDK 尚未封装分享接口；应用通过 `Client.Post` 调用，并自行保存来源映射。
+想知道邀请来自哪个渠道，可以在生成分享链接时传入 `callback_data`。用 `Client.Post` 调用官方接口，再在应用里记录每个值对应的渠道。
 
 ## 生成分享链接
+
+下面的函数封装业务层的分享请求。
 
 ```go
 package guide
@@ -42,11 +44,14 @@ func GenerateInvite(ctx context.Context, client *api.Client, source string) (str
 }
 ```
 
-本函数是业务层示例，不是 SDK 的专用分享封装。分享参数不要携带密钥或个人敏感信息；平台回传数据也需要按业务边界校验。
-
 ## 接收生命周期事件
 
-通过 `OnEvent` 注册 `FRIEND_ADD`、`FRIEND_DEL`、`GROUP_ADD_ROBOT`、`GROUP_DEL_ROBOT` 等事件。当前只有事件名和原始信封，不具备覆盖所有事件字段的统一类型化视图；请按对应官方事件文档解码 `ctx.Payload.D`。
+通过 [`OnEvent` 路由](../../getting-started/events/routing.md)注册所需事件。
+
+- `FRIEND_ADD` 和 `FRIEND_DEL`。
+- `GROUP_ADD_ROBOT` 和 `GROUP_DEL_ROBOT`。
+
+按对应官方事件文档解码 `ctx.Payload.D`。
 
 ```go
 package guide
@@ -69,12 +74,16 @@ func RegisterFriendEvents(bot *goqqrobot.Bot, consume func(context.Context, json
 }
 ```
 
-`OnEvent` 注册不代表平台已经订阅此事件。WebSocket 需要对应 intent，Webhook 需要在平台配置订阅。
+WebSocket 使用对应 intent。Webhook 在平台配置订阅。
 
-当前 `Context.Reply` 的自动路由覆盖消息事件和场景明确的交互事件，不能直接套用到所有生命周期事件。若某个官方事件明确允许通过外层事件 ID 回复，应使用 `Client.SendReply` 显式填写场景、接收者和 `EventID`；不要填写事件类型名，也不要从不相关字段猜测接收者。
+## 注意事项
+
+- SDK 尚未封装分享接口。`GenerateInvite` 是业务层示例。
+- 分享参数中的密钥或个人敏感信息可能随分享传播。平台回传数据也应按业务边界校验。
+- SDK 提供事件名和收到的原始事件数据，目前还没有为所有字段定义结构体。注册 `OnEvent` 后，还要按接入方式订阅对应的事件。
+- `Context.Reply` 自动路由覆盖消息事件和场景明确的交互事件。生命周期事件不一定支持该入口。
+- 官方允许使用外层事件 ID 回复时，可调用 [`Client.SendReply`](../../getting-started/api-calls.md)。显式填写场景、接收者和 `EventID`。事件类型名不能充当 ID。接收者也不能从无关字段推断。
 
 ## 另请参阅
 
-- [官方分享接口](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/v2_generate_url_link.post.html)
-- [事件订阅与路由](../../getting-started/events/routing.md)
-- [显式 API 调用](../../getting-started/api-calls.md)
+[官方分享接口](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/v2_generate_url_link.post.html) · [事件订阅与路由](../../getting-started/events/routing.md) · [显式 API 调用](../../getting-started/api-calls.md)

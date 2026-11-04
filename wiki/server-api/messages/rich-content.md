@@ -1,10 +1,10 @@
 # 读取图片、表情、卡片与转发
 
-`ctx.Message()` 将平台消息解码为业务可持有的快照，不要求业务依赖 WebSocket、Webhook 或内部路由。SDK 不自动下载附件、追踪网页、上传素材或补造缺失字段。
+通过 `ctx.Message()` 可以读取正文、附件、卡片和转发内容。无论事件来自 WebSocket 还是 Webhook，业务代码都使用同一套消息结构。
 
 ## 将完整消息交给业务服务
 
-下面注册函数可用于群 @和单聊消息。业务回调只接收 Go 上下文和数据模型，不必认识 SDK 的处理上下文或传输协议。
+下面的注册函数同时支持群聊中 @机器人的消息和单聊消息。回调只接收标准库的 `context.Context` 和消息数据，不依赖 SDK 的事件上下文或传输协议。
 
 ```go
 package guide
@@ -30,27 +30,27 @@ func RegisterRichReceiver(bot *goqqrobot.Bot, consume func(context.Context, *mes
 }
 ```
 
-业务服务可将 SDK 模型转换成自己的消息模型再持久化，避免把协议细节扩散到领域代码。返回切片和解码数据属于此次快照，不与原始 SDK 事件共享可变状态。
+业务服务可以把消息转换为自己的结构再保存。`ctx.Message()` 返回的切片和解析结果都是独立数据，修改后不会影响 SDK 保存的原始事件。
 
 ## 选择数据入口
 
-| 内容 | 入口 | 边界 |
+| 内容 | 入口 | 可读数据 |
 | --- | --- | --- |
 | 原始文字、Unicode 表情或平台文本标签 | `m.Content` | 原样保留，不自动把标签转成图片 |
-| 当前消息附件 | `m.Attachments` | URL、文件名、MIME、字节数、宽高等，字段依平台下发 |
-| 所有层级附件 | `m.AllAttachments()` | 按原消息及递归条目顺序展开，失去独立消息归属 |
-| 所有层级图片 | `m.Images()` | 按 MIME 筛选，不根据文件名或 URL 猜测 |
-| 语音结果 | 附件的 `VoiceWAVURL`、`ASRReferText` | 仅在平台提供时可用 |
-| 卡片、小程序、位置等 | `m.ARK` | 开放 JSON 字段，不保证含跳转或图片 URL |
-| 引用、并列或转发条目 | `m.MsgElements` | 递归保留作者、消息索引、正文、附件和 ARK |
-| 场景扩展 | `m.MessageScene.Lookup(key)` | 按 `key=value` 提取，值中的等号会保留 |
-| 未来未建模字段 | `m.Raw`、条目的 `Raw` | 原始 JSON；可能有敏感授权数据 |
+| 当前消息附件 | `m.Attachments` | 平台下发的 URL、文件名、MIME、字节数、宽高等 |
+| 所有层级附件 | `m.AllAttachments()` | 先列出当前消息的附件，再按顺序展开嵌套条目 |
+| 所有层级图片 | `m.Images()` | 按 MIME 筛选 |
+| 语音结果 | 附件的 `VoiceWAVURL`、`ASRReferText` | 平台提供的语音字段 |
+| 卡片、小程序、位置等 | `m.ARK` | 开放的 JSON 字段 |
+| 引用、并列或转发条目 | `m.MsgElements` | 保留各层的作者、消息索引、正文、附件和 ARK |
+| 场景扩展 | `m.MessageScene.Lookup(key)` | 按 `key=value` 提取，保留值里的等号 |
+| 尚未建模的字段 | `m.Raw`、条目的 `Raw` | 原始 JSON |
 
-`message.MessageAttachment` 和 `message.MessageScene` 是相应接收模型的兼容别名。旧 `ArkData`、`Elements` 原始字段也保留，新业务优先使用类型化 `ARK` 和 `MsgElements`。
+`message.MessageAttachment` 和 `message.MessageScene` 是对应接收模型的兼容别名。SDK 仍保留旧的原始字段 `ArkData`、`Elements`。新代码可通过 `ARK` 和 `MsgElements` 直接读取结构化数据。
 
 ## 读取可选卡片字段
 
-以下纯数据函数不联网。`jump_url` 只是按实际载荷读取的字段名示例，不代表每一种卡片都承诺有此字段。
+下面的函数只读数据，不联网。示例读取 `jump_url`。可用字段以实际收到的卡片数据为准。
 
 ```go
 package guide
@@ -67,13 +67,22 @@ func CardJumpURL(m *message.Received) (string, bool, error) {
 }
 ```
 
-字段缺失返回 `false, nil`；存在但不是预期 JSON 类型时返回解码错误。对于对象或数组，传入对应业务结构，而不是强行当成字符串。
+对象或数组应解码到相应的业务结构。发送用的 [ARK 模板](types/ark.md)另有独立结构。
 
 ## 图片表情与引用的限制
 
-图片形式的表情包仅在平台实际下发图片附件时可由 `Images()` 读取。QQ 内置表情、小程序或转发内容没有链接时，SDK 没有足够信息生成真实图片地址。合并转发若只下发文字摘要，也无法恢复未提供的原始消息节点。
+需要保留作者和层级归属时，遍历 `MsgElements`。
 
-需要原作者和层级归属时遍历 `MsgElements`，不要只保存扁平附件列表。`msg_idx/ref_msg_idx` 是展示引用上下文，可能出现临时值或关联不稳定，不能保证可靠溯源或作为撤回 ID。
+## 注意事项
+
+- SDK 不自动下载附件、追踪网页、上传素材或补造字段。
+- 展开后的附件列表不标明每个附件属于哪条消息。`Images()` 不从文件名或 URL 推测图片类型。
+- 语音字段仅在平台提供时可用。卡片不保证含跳转或图片 URL。
+- 字段缺失时返回 `false, nil`。实际 JSON 类型与目标类型不符时返回解码错误。
+- 原始 JSON 可能含敏感授权数据。
+- 图片表情包只有随图片附件下发时才可用 `Images()` 读取。内置表情、小程序或转发缺少链接时，SDK 无法生成真实图片地址。
+- 合并转发只下发文字摘要时，SDK 无法恢复原消息节点。
+- `msg_idx/ref_msg_idx` 是展示引用上下文。临时值或不稳定关联无法保证可靠溯源。这两个索引也不用于撤回。
 
 ## 另请参阅
 

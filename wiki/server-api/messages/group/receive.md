@@ -1,10 +1,10 @@
 # 接收群聊消息
 
-注册 `OnMessage(eventType, handler)` 处理群消息正文和附件。命令处理优先；未知命令及只包含附件的消息仍能进入此入口。
+注册 `OnMessage(eventType, handler)` 处理群消息的正文和附件。
 
 ## 将消息交给业务服务
 
-以下注册函数在运行前调用。业务服务获得独立解码结果，可以继续读取作者、卡片及引用条目。
+在机器人启动前调用下面的注册函数。业务服务接收解析后的消息副本，可以从中读取发送者、卡片和引用条目。
 
 ```go
 package guide
@@ -32,6 +32,8 @@ func RegisterGroupReceiver(bot *goqqrobot.Bot, consume func(context.Context, *me
 
 ## 常用字段
 
+使用 `ctx.Message()` 返回的消息读取以下字段。卡片和嵌套结构见[读取富文本](../rich-content.md)。
+
 | 读取内容 | 字段或方法 |
 | --- | --- |
 | 群会话 | `m.GroupOpenID` / `m.ConversationID()` |
@@ -44,11 +46,17 @@ func RegisterGroupReceiver(bot *goqqrobot.Bot, consume func(context.Context, *me
 
 ## 订阅不等于注册
 
-`GROUP_AND_C2C_EVENT` 用于常规群 @与单聊消息；群全量能力需要在平台开通并选择相应订阅。群消息事件与群成员管理事件是不同订阅，不要用注册一个处理函数代替平台配置。
+为群聊中 @机器人的消息和单聊消息订阅 `GROUP_AND_C2C_EVENT`。配置方式见[事件订阅](../../../getting-started/events/README.md)。
 
-当前 `IntentMask` 未支持官方的 `GROUP_MEMBER_EVENT` 名称；它不是群全量消息开关。成员增减、入群审批等也没有统一类型化接收入口，不能把本页普通消息示例用于宣称这些能力已完成。
+## 注意事项
 
-处理函数可并发执行，若业务要求“同一群逐条处理”，应在业务服务中协调。WebSocket 重放可能重复投递，写入业务需幂等。
+- 命令优先处理。未知命令和只有附件的消息仍可进入 `OnMessage`。
+- 群全量能力需在平台开通并选择相应订阅。注册函数不会代替平台配置。
+- 群消息与群成员管理事件各用不同订阅。
+- `IntentMask` 尚不支持官方的 `GROUP_MEMBER_EVENT`。该名称也不是群全量消息开关。
+- 成员增减和入群审批尚无统一的类型化接收入口。
+- 处理函数可并发运行。同一群需要逐条处理时，由业务服务协调。
+- WebSocket 重放可能重复投递。业务写入需实现幂等。
 
 ## 另请参阅
 

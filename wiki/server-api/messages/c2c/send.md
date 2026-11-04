@@ -1,10 +1,10 @@
 # 发送单聊消息
 
-回复当前用户时，从 `*types.Context` 发送即可；没有当前事件的后台业务，则使用 `*api.Client` 和明确目标。
+用 `*types.Context` 回复当前用户。后台业务没有当前事件时，用 `*api.Client` 指定目标。
 
 ## 回复与输入状态
 
-下面是一个可注册到单聊命令的处理函数。输入状态是一次平台请求，不会在后台持续刷新。
+将下面的处理函数注册到单聊命令。
 
 ```go
 package guide
@@ -22,11 +22,11 @@ func ReplyPrivate(ctx *types.Context) error {
 }
 ```
 
-`Typing(seconds)` 的范围为 1..60，只能在单聊使用。普通文字直接 `ctx.ReplyText("查询完成")`；消息构造本身不会联网，`Reply` 才发送。
+用 `ctx.ReplyText("查询完成")` 回复普通文字。构造消息不会联网，调用 `Reply` 才会发送。
 
 ## 后台业务主动发送
 
-以下函数接收业务系统提供的客户端和已知 `user_openid`，使用调用方传入的可取消上下文。
+下面的函数接收业务系统提供的客户端和已知的 `user_openid`。调用方传入可取消的上下文。
 
 ```go
 package guide
@@ -46,13 +46,21 @@ func NotifyPrivate(ctx context.Context, client *api.Client, userOpenID string) (
 }
 ```
 
-主动发送能否成功由平台权限及配额决定。需要明确发送单聊唤醒消息时可用 `client.SendWakeup(ctx, userOpenID, outgoing)`；这不是绕开主动消息限制的方法。
+使用 `client.SendWakeup(ctx, userOpenID, outgoing)` 显式发送单聊唤醒消息。
 
 ## 序号与失败处理
 
-同一 Context 上的单聊回复自动预留递增 `msg_seq`，并发调用也不会重复编号；失败同样消耗序号。显式使用 `.Sequence(n)` 可管理受控重试，但 SDK 不自动重试 POST。不要与自行固定序号的旧发送函数混用。
+用同一个 `Context` 回复多次时，SDK 会分配递增的 `msg_seq`。并发回复也会使用不同序号。需要自行控制重试时，可以通过 `.Sequence(n)` 指定序号。
 
-`ctx.SendReply(ctx.RequestContext(), outgoing)` 返回发送结果；其 `ID` 用于撤回，`ExtInfo.RefIndex` 用于展示引用，两者不可互换。
+`ctx.SendReply(ctx.RequestContext(), outgoing)` 返回发送结果。撤回使用 `ID`，展示引用使用 `ExtInfo.RefIndex`。详见[引用与撤回](../reference-and-recall.md)。
+
+## 注意事项
+
+- `Typing(seconds)` 仅用于单聊。取值为 1 至 60 秒，依据 SDK 的参数校验。每次调用只发一次请求，不会在后台刷新。
+- QQ 检查主动消息（proactive message）的权限和配额。唤醒消息也无法绕过主动发送限制。
+- 请求失败仍会消耗序号。SDK 不自动重试 POST。
+- 混用自行固定序号的旧发送函数会破坏序号管理。
+- 把展示引用索引当作撤回 ID，无法定位要撤回的消息。
 
 ## 另请参阅
 

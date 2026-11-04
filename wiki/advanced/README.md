@@ -1,10 +1,22 @@
 # 业务接入与扩展
 
-常规回复使用 `Context`，独立后台服务使用 `api.Client`，纯消息构造使用 `message`。这三种入口可以组合，不需要业务导入 `internal`。
+根据任务选择入口：回复当前事件、在后台调用 QQ API，或单独构造消息。
 
-- [将机器人接入业务服务](business-integration.md)：handler 保持简短，把业务逻辑和持久化交给自己的服务。
-- [调用未封装的官方接口](raw-api.md)：认证、URL 编码、自定义响应模型及消息字段扩展。
-- [测试消息发送](testing.md)：注入本地 HTTP 替身，避免单元测试访问 QQ。
-- [示例程序与验收](../examples/README.md)：使用真实机器人验证客户端行为。
+- 常规回复使用 `Context`。
+- 独立后台服务使用 `api.Client`。
+- 只构造消息时使用 `message`。
 
-扩展点是显式能力，不表示 SDK 已完整封装所有官方模块。接口覆盖见[覆盖范围](../reference/coverage.md)。
+这些方法可以一起用，公开包已提供所需能力。
+
+- [将机器人接入业务服务](business-integration.md)。让处理函数专心收消息和回复，业务规则与数据保存交给自己的服务。
+- [调用未封装的官方接口](raw-api.md)。配置认证、URL 编码、自定义响应模型和消息字段。
+- [测试消息发送](testing.md)。用测试客户端模拟 QQ 的响应，让单元测试在本地运行。
+- [示例程序与验收](../examples/README.md)。用真实机器人验证客户端行为。
+
+## 注意事项
+
+遇到 SDK 还没封装的接口时，由你的程序决定何时直接发请求。现成的方法见[覆盖范围](../reference/coverage.md)。
+
+## 另请参阅
+
+[API 调用指南](../getting-started/api-calls.md)

@@ -1,10 +1,10 @@
 # 添加和读取频道表情表态
 
-表态是在已有频道消息上添加一个表情，不是发送表情图片。现有 `api/channel` 提供添加、删除及查询表态用户的方法。
+表情表态（reaction）把表情附在已有频道消息上。使用 `api/channel` 添加、删除或查询表态用户。
 
 ## 添加一个系统表情表态
 
-以下函数接收平台支持的表情 ID；不要把图片 URL 当作表情 ID。
+以下函数接收平台支持的表情 ID。
 
 ```go
 package guide
@@ -24,11 +24,11 @@ func RemoveChannelReaction(ctx *types.Context, channelID, messageID, emojiID str
 }
 ```
 
-`EmojiTypeSystem` 为类型 1，`EmojiTypeCustom` 为类型 2；是否可用、ID 的合法范围及权限由平台决定。SDK 不提供表情 ID 到图片 URL 的统一转换。
+平台将 `EmojiTypeSystem` 定为类型 1，将 `EmojiTypeCustom` 定为类型 2。
 
 ## 查询第一页用户
 
-以下代码只查询首页，返回类型中的 `Cookie` 和 `IsEnd` 用于平台分页。
+下面的示例查询第一页。可用 `IsEnd` 判断是否还有下一页，并用返回的 `Cookie` 继续查询。
 
 ```go
 package guide
@@ -44,7 +44,12 @@ func FirstReactionUsers(ctx *types.Context, channelID, messageID, emojiID string
 }
 ```
 
-**当前限制：**旧方法直接拼接非空 `cookie`，没有进行查询参数转义。包含 `+`、`&`、`=` 等字符的游标可能导致分页请求错误。因此本页仅展示空游标的首页，不能把该方法描述为已覆盖所有分页情况。自主管理分页时可通过底层 `Client.Request` 配合 `url.Values` 构造请求，并按官方接口验证，不要直接拼接游标。
+## 注意事项
+
+- 表态不会发送表情图片。图片 URL 无法充当表情 ID。
+- 平台决定表情是否可用、ID 的范围及权限。SDK 没有统一的表情 ID 到图片 URL 的转换。
+- 旧方法直接拼接非空 `cookie`，未转义查询参数。`+`、`&`、`=` 等字符可能导致分页请求错误。空游标的首页示例无法覆盖这些分页情况。
+- 自行分页时，可用[底层请求](../../../advanced/raw-api.md)中的 `Client.Request`。用 `url.Values` 编码参数，并按官方接口验证。
 
 ## 另请参阅
 

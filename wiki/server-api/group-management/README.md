@@ -1,8 +1,10 @@
-# 群聊管理
+# 管理群聊
 
-本分类对应官方“群聊管理”，区别于[群聊消息收发](../messages/group/README.md)。当前 SDK 尚无群资料、成员管理、禁言和入群审批的类型化封装。
+查询群资料、管理成员、禁言和审批入群，可以直接调用 QQ 官方接口。SDK 还没有为这些操作提供专用方法。收发消息请看[群聊消息收发](../messages/group/README.md)。
 
 ## 能力对应表
+
+按任务选择官方接口，再通过[原始 API](../../advanced/raw-api.md)调用。
 
 | 任务 | 官方接口 | 当前接入方式 |
 | --- | --- | --- |
@@ -13,22 +15,25 @@
 | 成员、移除和黑名单 | [群成员管理](members.md) | 原始 API |
 | 入群申请和自动审批 | [入群审批](join-requests.md) | 原始 API |
 
-是否获得管理员身份、是否在接口白名单内、操作次数和业务资格由 QQ 平台判断。存在 API 路径并不表示每个机器人都能使用。
-
 ## 获取当前群标识
 
-在群消息处理函数中，用 `ctx.Message()` 读取 `GroupOpenID` 或 `ConversationID()`，再将该值交给应用自己的管理服务。后台服务可以通过已有业务映射获得群 OpenID，不需要伪造 `Context`。
+在群消息处理函数中，可从 `ctx.Message()` 的结果读取 `GroupOpenID`，也可调用消息的 `ConversationID()`。将群 OpenID 传给管理服务即可。后台服务可以直接从业务记录读取群 OpenID，无需构造 `Context`。
 
-群 OpenID、普通 QQ 群号、频道 `guild_id` 是不同标识。原始 API 路径中的标识要用 `url.PathEscape` 编码，查询参数用 `url.Values` 编码。
+路径中的标识用 `url.PathEscape` 编码。查询参数用 `url.Values` 编码。
 
 ## 事件订阅限制
 
-群成员及入群申请事件使用官方 `GROUP_MEMBER_EVENT` intent。当前 SDK 的 `config.IntentMask` 尚不接受该名称，不能在 WebSocket 配置中直接填写并期待订阅成功。Webhook 可以按平台开放情况配置事件，但仍需业务自行解码原始载荷。
+按接入方式选择订阅配置。官方群成员及入群申请事件使用 `GROUP_MEMBER_EVENT`。
 
-这个限制与普通群消息的 `GROUP_AND_C2C_EVENT` 不同，也不应与频道成员的 `GUILD_MEMBERS` 混用。
+[Webhook](../../getting-started/events/webhook.md) 可按平台开放范围配置事件。收到事件后，由业务读取原始事件数据。
+
+## 注意事项
+
+- QQ 平台检查管理员身份、接口白名单、操作次数和业务资格。存在接口路径不表示每个机器人都能使用。
+- 群 OpenID、QQ 群号和频道 `guild_id` 分别标记不同对象。调用时按接口选择标识。
+- 当前 SDK 的 `config.IntentMask` 不接受 `GROUP_MEMBER_EVENT`。直接填入 WebSocket 配置会导致订阅失败。
+- 普通群消息使用 `GROUP_AND_C2C_EVENT`。频道成员事件使用 `GUILD_MEMBERS`。两项订阅都无法代替群成员事件订阅。
 
 ## 另请参阅
 
-- [官方入群申请事件及 intent](https://bot.q.qq.com/wiki/develop/api-v2/autogen/event/group_join_request.html)
-- [原始 API 扩展](../../advanced/raw-api.md)
-- [SDK 覆盖范围](../../reference/coverage.md)
+[官方入群申请事件及 intent](https://bot.q.qq.com/wiki/develop/api-v2/autogen/event/group_join_request.html) · [原始 API 扩展](../../advanced/raw-api.md) · [SDK 覆盖范围](../../reference/coverage.md)

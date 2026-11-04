@@ -1,10 +1,10 @@
 # 发送及撤回频道消息
 
-普通文本和 Markdown 优先使用 `ctx.Reply`。需要发送 Embed 或使用完整频道协议结构时，旧的 `api/channel` 包仍提供入口，但应先了解其返回模型限制。
+发送普通文本和 Markdown 时优先用 `ctx.Reply`。发送嵌入消息（Embed）或完整频道协议结构时，用旧的 `api/channel` 包。
 
 ## 使用统一回复入口
 
-将下面函数注册到频道消息事件；Markdown 在频道场景是否可用由平台权限决定。
+将下面的函数注册到频道消息事件。
 
 ```go
 package guide
@@ -19,11 +19,11 @@ func ReplyChannelMarkdown(ctx *types.Context) error {
 }
 ```
 
-统一发送结果使用 `message.ReplyResult`，其中 `Timestamp` 是 `time.Time`。发送成功但响应解析失败时会同时返回结果及错误，`Raw` 保存平台回包。
+统一发送结果为 `message.ReplyResult`。`Timestamp` 的类型是 `time.Time`。
 
 ## 使用旧频道协议入口
 
-以下函数演示 Embed 的结构和旧 API 用法，`channelID`、`sourceID` 由调用方明确提供。它是现有接口用法说明，不表示其响应模型已完成修复或真实联调。
+以下函数演示 Embed 结构与旧 API。调用方显式提供 `channelID` 和 `sourceID`。
 
 ```go
 package guide
@@ -44,11 +44,9 @@ func SendChannelEmbed(ctx *types.Context, channelID, sourceID string) (*message.
 }
 ```
 
-**已知限制：**这些旧方法仍将回包解析到 `message.SendMessageResponse`，其 `Timestamp` 是 `int64`。平台返回 RFC3339 字符串时间戳时会解码失败，消息却可能已经发送成功。旧方法此时没有统一入口那样的带 Raw 成功结果，不应看到解码错误就自动重发。
-
 ## 撤回明确的频道消息
 
-频道撤回当前使用旧入口。以下函数只撤回调用方明确传入的消息，不猜测或自动撤回接收消息。
+通过旧入口指定要撤回的消息 ID。以下函数不会推断或自动撤回接收消息。
 
 ```go
 package guide
@@ -67,7 +65,15 @@ func RecallChannelDM(ctx *types.Context, dmGuildID, messageID string) error {
 }
 ```
 
-最后的布尔参数为 `hideTip`，是否有权隐藏提示仍由平台检查。`Context.Recall` / `Client.RecallMessage` 目前只支持 QQ 单聊和群聊，不能代替上述频道入口。
+最后的布尔参数是 `hideTip`，用于请求隐藏撤回提示。
+
+## 注意事项
+
+- 频道 Markdown 能否使用由平台权限决定。
+- 如果统一入口已经发出消息，但未能解析 QQ 的响应，调用会同时返回结果和错误。响应原文保存在结果的 `Raw` 中。
+- 旧方法将响应解析为 `message.SendMessageResponse`，其中 `Timestamp` 是 `int64`。收到 RFC3339 字符串时间戳会解码失败，消息仍可能已发出。
+- 旧方法解析失败时，不会返回带 `Raw` 的发送结果。由于消息可能已经发出，直接重发可能造成重复。旧入口示例不表示响应模型已修复或经过真实联调。
+- 隐藏撤回提示的权限由平台检查。[统一撤回入口](../reference-and-recall.md)中的 `Context.Recall` 和 `Client.RecallMessage` 仅支持 QQ 单聊和群聊。
 
 ## 另请参阅
 

@@ -1,8 +1,10 @@
 # 查询和管理群成员
 
-当前没有 `ListGroupMembers` 一类 SDK 专用方法。以下函数是应用层封装示例，通过 `Client.Get` 获取一页成员；它不会自动翻页或修改群成员。
+用 `Client.Get` 查询一页群成员。SDK 尚无 `ListGroupMembers` 一类专用方法。
 
 ## 查询一页成员
+
+下面的函数每次查一页。要继续查，把上一页返回的 `next_cursor` 传进去。`next_cursor` 为空时，表示已经查到最后一页。
 
 ```go
 package guide
@@ -47,11 +49,9 @@ func ReadMembers(ctx context.Context, client *api.Client, groupOpenID, cursor st
 }
 ```
 
-官方当前规定每页最多 30 条，使用上页的 `next_cursor` 获取后续页，空游标表示末页。该接口仍有内邀/白名单限制；遇到权限错误先确认平台资格，不要通过循环重试绕过限制。
-
 ## 其他成员操作
 
-下列接口同样尚未提供类型化 SDK 方法。操作前请从官方字段表建立应用请求模型，不要把查询示例改个 HTTP 方法就用于移除成员。
+下列接口需要直接调用。请求用到哪些字段，可以对照官方文档定义结构体。
 
 | 官方能力 | 请求路径 |
 | --- | --- |
@@ -60,10 +60,15 @@ func ReadMembers(ctx context.Context, client *api.Client, groupOpenID, cursor st
 | [群黑名单查询](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/v2_groups_group_openid_member_blacklist.get.html) | `GET /v2/groups/{group_openid}/member_blacklist` |
 | [群黑名单操作](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/v2_groups_group_openid_member_blacklist.post.html) | `POST /v2/groups/{group_openid}/member_blacklist` |
 
-成员身份、审批资格和操作审计由业务负责。并发任务不要共享可修改的分页结果或原始事件载荷。
+应用负责核对成员身份和审批资格，也要记录执行过的操作。调用方式见[原始 API 扩展](../../advanced/raw-api.md)。
+
+## 注意事项
+
+- 官方当前规定每页最多 30 条。示例每次查询一页，不自动翻页，也不修改成员。
+- 接口仍受内邀或白名单限制。循环重试无法获得权限，遇到权限错误先确认平台资格。
+- 只更换查询示例的 HTTP 方法，无法构成移除成员的请求。
+- 多个协程同时读写同一份分页结果，可能出现数据竞争。共享原始事件数据时也是如此。
 
 ## 另请参阅
 
-- [官方获取群成员列表](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/v2_groups_group_openid_members.get.html)
-- [群聊管理概述](README.md)
-- [入群审批](join-requests.md)
+[官方获取群成员列表](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/v2_groups_group_openid_members.get.html) · [群聊管理概述](README.md) · [入群审批](join-requests.md)

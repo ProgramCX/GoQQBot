@@ -1,21 +1,21 @@
-# 消息类型
+# 选择消息类型
 
-`pkg/message` 的构造器返回不可变的 `Outgoing`。构造时不联网；`Build(scene)` 在本地校验，`Context.Reply` 或 `Client.SendReply` 才实际发送。
+用 `pkg/message` 构造 `Outgoing` 消息。链式设置返回新值，不修改原来的消息。构造与 `Build(scene)` 校验都在本地进行，调用 `Context.Reply` 或 `Client.SendReply` 时才发出请求。
 
 ## 按内容选择构造器
 
-| 内容 | 构造入口 | 场景或限制 |
+| 内容 | 构造入口 | 场景 |
 | --- | --- | --- |
 | [纯文本](text.md) | `message.Text` | 群聊、单聊、频道及频道私信 |
-| [Markdown](markdown.md) | `message.Markdown`、`MarkdownTemplate` | 频道需相应权限 |
+| [Markdown](markdown.md) | `message.Markdown`、`MarkdownTemplate` | 见注意事项 |
 | [图文卡片](cards.md) | `message.Card` | QQ 单聊和群聊 |
-| [ARK 模板](ark.md) | `message.Ark` | 旧协议，受模板和场景权限限制 |
-| 普通富媒体 | `message.Media(fileInfo)` | 单聊和群聊，需先完成对应会话上传 |
-| 输入状态 | `message.Typing(seconds)` | 仅单聊，秒数为 1..60 |
+| [ARK 模板](ark.md) | `message.Ark` | 旧协议 |
+| [普通富媒体](../rich-media/README.md) | `message.Media(fileInfo)` | QQ 单聊和群聊 |
+| 输入状态 | `message.Typing(seconds)` | 仅单聊 |
 
 ## 先在本地校验
 
-以下函数不会创建客户端或发送消息，可用于确认业务构造是否满足 SDK 本地限制。
+下面的函数在本地校验业务构造的消息。函数不创建客户端，也不发送消息。
 
 ```go
 package guide
@@ -31,13 +31,19 @@ func BuildMessagePreview() (map[string]json.RawMessage, error) {
 }
 ```
 
-校验通过不代表平台一定接受；权限、审核、客户端展示、文件有效期和配额仍由 QQ 决定。
-
 ## 扩展字段
 
-`New(kind).WithField(name, value)` 可承载新增消息类型和字段；字段在设置时立即序列化为快照。已知非法组合仍会返回错误，`msg_type`、`msg_id`、`event_id`、`msg_seq` 和 `is_wakeup` 不能通过 WithField 覆盖。
+用 `New(kind).WithField(name, value)` 添加新消息类型和字段。设置字段时，SDK 会将字段值编码成 JSON 并保存。后续修改原值不会影响消息。
 
-本地消息错误可用 `errors.Is(err, message.ErrInvalidMessage)` 判断。零值 Outgoing 无效；请使用构造器。
+用 `errors.Is(err, message.ErrInvalidMessage)` 判断本地消息错误。
+
+## 注意事项
+
+- 频道 Markdown 需要相应权限。旧 ARK 协议受模板和场景权限限制。
+- 普通富媒体先在目标会话上传，再发送。输入状态的范围是 1 至 60 秒，由 SDK 校验。
+- 本地校验通过后，QQ 仍会检查权限和配额。审核、客户端展示及文件有效期也由 QQ 决定。
+- 已知非法字段组合会返回错误。`WithField` 无法覆盖 `msg_type`、`msg_id`、`event_id`、`msg_seq` 和 `is_wakeup`。
+- 零值 `Outgoing` 无效。构造器会生成有效的消息结构。
 
 ## 另请参阅
 

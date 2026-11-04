@@ -1,10 +1,10 @@
 # 调用 OpenAPI
 
-在事件处理函数中，优先使用 `ctx.Reply`、`ctx.UploadFile` 等方法；定时任务、后台服务和已有业务系统可直接持有 `*api.Client`，不必启动 Bot 或构造假的接收事件。
+在事件处理函数里，可以直接调用 `ctx.Reply` 或 `ctx.UploadFile`。定时任务和后台服务可以用 `*api.Client` 直接调用 OpenAPI，无需启动 Bot 或模拟收到的事件。
 
 ## 使用明确的回复目标
 
-下面是可放入业务包的完整函数。客户端由应用注入，`userOpenID` 和 `sourceMessageID` 从真实的单聊事件获取，不能使用普通 QQ 号码或引用索引：
+把下面的函数放进业务包，调用时传入客户端。其余两个参数从[单聊事件](../server-api/messages/c2c/receive.md)中取出，分别是 `userOpenID` 和 `sourceMessageID`。
 
 ```go
 package guide
@@ -28,11 +28,13 @@ func ReplyToUser(parent context.Context, client *api.Client, userOpenID, sourceM
 }
 ```
 
-`ReplyTarget.MessageID` 与 `EventID` 必须二选一，分别表示消息 `d.id` 和可回复事件的外层 `id`。`Client.SendReply` 不负责跨调用自动分配序号，多次回复由调用方设置 `.Sequence(n)`；事件上下文的新回复方法则共用自动计数器。
+`ReplyTarget.MessageID` 与 `EventID` 二选一。回复消息时填消息的 `d.id`。回复可回复事件时填事件外层的 `id`。[引用与撤回](../server-api/messages/reference-and-recall.md)说明了这些标识的区别。
 
-主动发送使用 `Client.SendMessage(ctx, message.Target{...}, outgoing)`；单聊唤醒使用 `SendWakeup`。主动发送能力、额度、接收方状态由平台检查，不能通过省略回复来源绕过限制。
+主动消息（proactive message）使用 `Client.SendMessage(ctx, message.Target{...}, outgoing)`。在单聊里唤醒用户时，调用 `SendWakeup`。
 
 ## 注入 HTTP 客户端
+
+应用已经有 HTTP 客户端时，可以通过 `api.WithHTTPClient` 交给 SDK 使用。
 
 ```go
 package guide
@@ -50,11 +52,11 @@ func NewClient(appID, appSecret string) *api.Client {
 }
 ```
 
-默认客户端超时为 30 秒。注入的客户端同时用于令牌获取和 API 请求；客户端及其传输资源仍由调用方管理。构造后不要并发修改其配置。
+SDK 自带的客户端默认 30 秒超时。如果传入自己的客户端，获取令牌和调用 API 都会用它。客户端和底层连接由你管理。
 
 ## 调用尚无专用方法的端点
 
-`Request` 是通用 JSON 请求入口，**不代表 SDK 已完成该领域的类型化封装**。下面展示调用方式，实际路径、请求体、权限及返回模型需对照对应官方接口：
+SDK 还没有封装某个接口时，可以用 `Request` 发送 JSON 请求。路径、请求体、权限和返回值都按该接口的官方文档填写。
 
 ```go
 package guide
@@ -70,12 +72,19 @@ func RequestJSON(ctx context.Context, client *api.Client, method, path string, b
 }
 ```
 
-`path` 传相对 OpenAPI 路径，例如 `/users/@me`，不是完整 URL。查询参数使用 `url.Values.Encode()` 编码；JSON body 不传预先编码的字符串。`Get`、`Post`、`Put`、`Delete` 是同一请求实现的便利方法。
+`path` 使用相对 OpenAPI 路径，例如 `/users/@me`。查询参数用 `url.Values.Encode()` 编码。`Get`、`Post`、`Put`、`Delete` 共用同一请求实现。
 
-SDK 不自动重试消息发送和上传操作。超时可能意味着平台已经执行成功；同时返回非 nil 结果和错误时先检查对应结果的 `Raw`，不要盲目重发。
+
+
+## 注意事项
+
+- 从真实事件中取出用户和消息标识。填普通 QQ 号码或引用索引会用错标识。
+- 用 `Client.SendReply` 回复同一条消息多次时，用 `.Sequence(n)` 为每次回复编号。通过事件上下文的新版回复方法发送时，SDK 会统一编号。
+- 主动发送时，QQ 会检查发送资格、额度和接收方状态。即使省略回复来源，QQ 也会做这些检查。
+- 同一个客户端已经在被使用时，并发修改配置可能产生数据竞争。
+- 用 `Request` 时，请求字段由你按接口文档填写。路径只填 OpenAPI 相对路径，传完整 URL 会偏离约定。请求体传 Go 值，传入已经编码的 JSON 字符串会再编码一次。
+- SDK 不会自动重试发送和上传。即使请求超时，QQ 也可能已经处理成功。如果调用同时返回结果和错误，先检查结果中的 `Raw`。直接重发可能会重复发送或上传。
 
 ## 另请参阅
 
-- [获取访问凭证](credentials.md)
-- [错误处理与 TraceID](../logging/errors.md)
-- [官方 API 调用指南](https://bot.q.qq.com/wiki/develop/api-v2/dev-prepare/api-call-guide.html)
+[获取访问凭证](credentials.md) · [错误处理与 TraceID](../logging/errors.md) · [官方 API 调用指南](https://bot.q.qq.com/wiki/develop/api-v2/dev-prepare/api-call-guide.html) · [调用未封装的官方接口](../advanced/raw-api.md)

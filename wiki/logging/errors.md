@@ -1,10 +1,10 @@
 # 处理错误与 panic
 
-处理函数返回错误时，SDK 继续接收事件。需要告警、指标或业务归档时使用 `WithErrorHandler`，不要依赖解析日志文本。
+处理函数返回错误后，SDK 继续接收事件。通过 `WithErrorHandler` 更新告警、指标或业务归档，无需解析日志文本。
 
 ## 观察事件失败
 
-以下完整函数创建带观察函数的 Bot，日志只写可控元数据：
+下面的示例为 Bot 注册错误回调，只记录选定的诊断字段。
 
 ```go
 package guide
@@ -40,38 +40,53 @@ func NewObservedBot(path string, logger *slog.Logger) (*goqqrobot.Bot, error) {
 }
 ```
 
-此函数要求传入非 nil 日志器。示例同时启用了 SDK 日志与自定义观察日志，实际应用可只在观察函数中更新指标，避免同一故障重复打印。
-
-观察函数在工作协程中同步执行，可能并发调用，必须及时返回。SDK 不持锁调用它。保持 Context 和错误对象只读；不要直接格式化整个 Context、原始 Payload、`PanicError.Value` 或 `Stack`。
+错误回调在当前工作协程中同步执行，SDK 调用时不持有锁。示例同时开启了 SDK 日志与回调日志。实际应用可让回调只更新指标，避免同一次故障被记录两遍。
 
 ## 错误类型
 
+根据错误类型或 `errors.Is` 的结果判断失败原因。
+
 | 类型或判断 | 用途 |
 | --- | --- |
-| `*types.HandlerError` | `EventType`、`Stage` 和原始根因；通过 Unwrap 保留错误链 |
+| `*types.HandlerError` | 提供 `EventType`、`Stage` 和原始根因，通过 Unwrap 保留错误链 |
 | `*types.PanicError` | 已恢复的处理函数或观察函数 panic |
 | `*api.APIError` | HTTP 状态、平台错误码及 TraceID |
 | `errors.Is(err, message.ErrInvalidMessage)` | 本地消息构造或场景校验失败 |
-| `errors.Is(err, context.Canceled)` | 操作被取消；可能同时存在其他合并错误 |
+| `errors.Is(err, context.Canceled)` | 操作被取消，返回值可能还含其他错误 |
 
-处理阶段包含 `decode`、`handler`、`task`、`logger`、`error_handler`。SDK 隔离观察函数自己的 panic，不递归再次调用该观察函数。
+处理阶段包括 `decode`、`handler`、`task`、`logger` 和 `error_handler`。观察函数自身 panic 时，SDK 会隔离故障，不再递归调用该函数。
 
 ## 退出时仍要检查错误
 
-即使未设置日志器或错误观察函数，Bot 仍保留首个事件失败及首个观察函数失败，在 `Run` / `Shutdown` 结束时与关闭错误合并返回。运行过程中不会因为保存错误而停止接收，也不会无限积累所有错误对象。
+实时观察故障后，仍需检查 `Run` 和 `Shutdown` 的返回值。退出流程见[运行与关闭](../getting-started/lifecycle.md)。
 
-因此，既要处理实时观察回调，也要检查生命周期方法返回值。匹配到 `context.Canceled` 不代表合并错误里没有 `HandlerError`。
+- Bot 保留首个事件失败和首个观察函数失败。未设置日志器或观察函数时也会保留。
+- `Run` 或 `Shutdown` 结束时，Bot 将保留的失败与关闭错误合并返回。
+- Bot 记录首个故障后继续接收事件，不会无限积累错误对象。
 
 ## 平台错误
 
-`APIError.Error()` 不包含平台原始响应正文。需要人工排查原因时，可显式读取 `DiagnosticMessage()`，它长度受限并做尽力脱敏；它仍不是稳定业务错误码，分支逻辑应使用 `Code`、`StatusCode` 和 `errors.As`。
+业务分支可用 `errors.As` 取出 API 错误，再按 `Code` 和 `StatusCode` 处理。`APIError.Error()` 不包含平台原始响应正文。人工排查时可显式读取 `DiagnosticMessage()`。
 
-对于消息发送、素材完成等操作，非 nil 结果和错误可能表示 HTTP 已成功但回包解析失败。检查对应结果的 `Raw` 与业务状态，不要自动把它当成“尚未发送”。SDK 不自动重试消息 POST 或失败的业务处理。
+媒体错误可分开排查。
 
-出现媒体错误时，区分 QQ 从 URL 下载失败、QQ 上传处理超时、本地请求超时及业务队列过载。平台 TraceID 可用于向 QQ 支持反馈；不要把任意 URL、凭证或完整载荷一起记录。
+- QQ 从 URL 下载失败。
+- QQ 上传处理超时。
+- 本地请求超时。
+- 业务队列过载。
+
+向 QQ 支持反馈时，可提供平台 TraceID。
+
+## 注意事项
+
+- 示例函数需传入非 nil 的日志器。
+- 观察函数可能并发调用，应及时返回。Context 和错误对象保持只读。
+- 整体格式化 Context、原始 Payload、`PanicError.Value` 或 `Stack` 可能暴露敏感信息。记录 TraceID 时也应排除任意 URL、凭证和完整载荷。
+- 合并错误匹配 `context.Canceled` 时，仍可能含有 `HandlerError`。
+- `DiagnosticMessage()` 限制长度，并尽力脱敏。诊断文本不适合作为稳定的业务错误码。
+- 发送消息或确认素材上传时，接口可能同时返回结果和错误。此时 HTTP 请求可能已经成功，错误出在解析响应的阶段。先核对结果中的 `Raw` 和业务状态，再判断操作是否成功。
+- SDK 不自动重试消息 POST 或失败的业务处理。
 
 ## 另请参阅
 
-- [写入日志文件](write-log.md)
-- [API 调用指南](../getting-started/api-calls.md)
-- [官方错误码及 TraceID](https://bot.q.qq.com/wiki/develop/api-v2/dev-prepare/api-call-guide.html)
+[写入日志文件](write-log.md) · [API 调用指南](../getting-started/api-calls.md) · [官方错误码及 TraceID](https://bot.q.qq.com/wiki/develop/api-v2/dev-prepare/api-call-guide.html)

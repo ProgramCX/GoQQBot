@@ -13,6 +13,8 @@
 
 [使用文档](wiki/README.md) · [快速开始](wiki/getting-started/quick-start.md) · [完整目录](wiki/_Sidebar.md)
 
+在仓库根目录运行 `npm ci` 和 `npm run docs:dev` 可预览文档站。构建命令为 `npm run docs:build`，产物位于 `wiki/.vitepress/dist`。GitHub Pages 的发布源选择 GitHub Actions，`文档站` 工作流会在主分支文档更新后部署。
+
 ```
    ______          ____    ____     ____           __
   / ____/  ____   / __ \  / __ \   / __ )  ____   / /_
