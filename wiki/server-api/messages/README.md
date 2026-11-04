@@ -32,8 +32,8 @@ func RegisterHello(bot *goqqrobot.Bot) {
 | --- | --- | --- |
 | 处理已注册命令 | `OnCommand(command, eventType, handler)` | 命令优先于普通消息处理 |
 | 处理某种消息 | `OnMessage(eventType, handler)` | 包括未知命令和仅带附件的消息 |
-| 跨消息类型兜底 | `OnAnyMessage(handler)` | 排在命令和指定类型 OnMessage 之后 |
-| 读取原始正文与附件 | `ctx.Message()` | 返回独立快照，不执行网络请求 |
+| 处理各类未匹配的消息 | `OnAnyMessage(handler)` | 排在命令和指定类型 OnMessage 之后 |
+| 读取原始正文与附件 | `ctx.Message()` | 返回消息副本，不向 QQ 发请求 |
 | 简单回复 | `ctx.ReplyText`、`ctx.ReplyMarkdown` | 自动选择回复来源及接收方 |
 | 组合发送内容 | `ctx.Reply(message.Outgoing)` | 内容构造器可复用，不执行隐式上传 |
 | 自行管理回复目标 | `Client.SendReply` | 显式提供 `ReplyTarget`，自行管理多次回复序号 |
@@ -60,10 +60,10 @@ func RegisterHello(bot *goqqrobot.Bot) {
 
 - 单聊和群聊事件均取决于平台权限及订阅配置。
 - 主动消息（proactive message）受平台资格和配额限制。
-- `Context` 首次使用后保持原实例。处理期间只读访问公开字段和载荷。
+- `Context` 首次使用后应继续通过原指针访问。处理函数可读取公开字段和事件数据，但不应修改。
 - SDK 可并发运行处理函数。数据库事务、会话串行及幂等由业务负责。
 - SDK 不自动重试消息 POST。返回错误时，平台可能已经收到请求。
-- `SendReply` 返回了结果但 `err` 也不是 nil，表示 HTTP 成功但回包解码失败。先检查 `Raw` 再决定如何恢复。直接重发可能重复发送。
+- `SendReply` 返回了结果但 `err` 也不是 nil，表示 HTTP 请求已成功，但 SDK 未能解析响应。先检查 `Raw` 再决定如何恢复。直接重发可能重复发送。
 
 ## 另请参阅
 

@@ -1,6 +1,6 @@
 # 管理群聊
 
-群聊管理使用官方原始 API。SDK 尚未封装群资料、成员管理、禁言和入群审批。[群聊消息收发](../messages/group/README.md) 使用另一组接口。
+查询群资料、管理成员、禁言和审批入群，可以直接调用 QQ 官方接口。SDK 还没有为这些操作提供专用方法。收发消息请看[群聊消息收发](../messages/group/README.md)。
 
 ## 能力对应表
 
@@ -17,7 +17,7 @@
 
 ## 获取当前群标识
 
-群消息处理函数用 `ctx.Message()` 读取 `GroupOpenID` 或 `ConversationID()`。将群标识交给应用的管理服务。后台服务可从业务映射取得群 OpenID，无需构造 `Context`。
+在群消息处理函数中，可从 `ctx.Message()` 的结果读取 `GroupOpenID`，也可调用消息的 `ConversationID()`。将群 OpenID 传给管理服务即可。后台服务可以直接从业务记录读取群 OpenID，无需构造 `Context`。
 
 路径中的标识用 `url.PathEscape` 编码。查询参数用 `url.Values` 编码。
 
@@ -25,7 +25,7 @@
 
 按接入方式选择订阅配置。官方群成员及入群申请事件使用 `GROUP_MEMBER_EVENT`。
 
-[Webhook](../../getting-started/events/webhook.md) 可按平台开放范围配置事件。业务自行解码原始载荷。
+[Webhook](../../getting-started/events/webhook.md) 可按平台开放范围配置事件。收到事件后，由业务读取原始事件数据。
 
 ## 注意事项
 

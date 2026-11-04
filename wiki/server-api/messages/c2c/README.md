@@ -24,7 +24,7 @@ func HandlePrivate(ctx *types.Context) error {
 
 ## 场景限制
 
-按发送场景选择接口。发送普通图片、视频或语音前，先[上传富媒体](../rich-media/c2c-upload.md)，再用 `file_info` 发送。[Markdown 图片素材](../material-management.md)走独立流程。
+按发送场景选择接口。发送普通图片、视频或语音前，先[上传富媒体](../rich-media/c2c-upload.md)，再用 `file_info` 发送。[Markdown 图片素材](../material-management.md)使用独立的上传流程。
 
 ## 注意事项
 

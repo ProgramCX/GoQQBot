@@ -4,7 +4,7 @@
 
 ## 查询一页成员
 
-下面的函数在应用层封装查询。用上页的 `next_cursor` 获取后续页。空游标表示末页。
+下面的函数每次查一页。要继续查，把上一页返回的 `next_cursor` 传进去。`next_cursor` 为空时，表示已经查到最后一页。
 
 ```go
 package guide
@@ -51,7 +51,7 @@ func ReadMembers(ctx context.Context, client *api.Client, groupOpenID, cursor st
 
 ## 其他成员操作
 
-为各项操作按官方字段表建立请求模型。SDK 尚未提供下列接口的类型化方法。
+下列接口需要直接调用。请求用到哪些字段，可以对照官方文档定义结构体。
 
 | 官方能力 | 请求路径 |
 | --- | --- |
@@ -60,14 +60,14 @@ func ReadMembers(ctx context.Context, client *api.Client, groupOpenID, cursor st
 | [群黑名单查询](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/v2_groups_group_openid_member_blacklist.get.html) | `GET /v2/groups/{group_openid}/member_blacklist` |
 | [群黑名单操作](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/v2_groups_group_openid_member_blacklist.post.html) | `POST /v2/groups/{group_openid}/member_blacklist` |
 
-成员身份、审批资格和操作审计由业务负责。调用方式见[原始 API 扩展](../../advanced/raw-api.md)。
+应用负责核对成员身份和审批资格，也要记录执行过的操作。调用方式见[原始 API 扩展](../../advanced/raw-api.md)。
 
 ## 注意事项
 
 - 官方当前规定每页最多 30 条。示例每次查询一页，不自动翻页，也不修改成员。
 - 接口仍受内邀或白名单限制。循环重试无法获得权限，遇到权限错误先确认平台资格。
 - 只更换查询示例的 HTTP 方法，无法构成移除成员的请求。
-- 并发共享可修改的分页结果可能产生数据竞争。共享原始事件载荷也有同样风险。
+- 多个协程同时读写同一份分页结果，可能出现数据竞争。共享原始事件数据时也是如此。
 
 ## 另请参阅
 
