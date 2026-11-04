@@ -15,6 +15,7 @@
 # Code coverage profiles and other test artifacts
 *.out
 coverage.*
+!/wiki/reference/coverage.md
 *.coverprofile
 profile.cov
 

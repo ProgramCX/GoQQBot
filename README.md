@@ -13,6 +13,8 @@ A lightweight QQ Bot framework written in Go, based on QQ Bot API v2. It support
 
 [Usage wiki (Chinese)](wiki/README.md) · [Quick start](wiki/getting-started/quick-start.md) · [Full navigation](wiki/_Sidebar.md)
 
+Run `npm ci` and `npm run docs:dev` from the repository root to preview the documentation. `npm run docs:build` writes the site to `wiki/.vitepress/dist`. Select GitHub Actions as the GitHub Pages source to deploy with the documentation workflow.
+
 ```
    ______          ____    ____     ____           __
   / ____/  ____   / __ \  / __ \   / __ )  ____   / /_
