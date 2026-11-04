@@ -1,8 +1,8 @@
-# 群聊富媒体上传
+# 上传群聊富媒体
 
-群聊和单聊使用同一套 SDK 上传入口。处理群聊事件时，`ctx.UploadMedia` 自动选中 `group_openid`；无需重复解析群标识或手工拼接口路径。
+群聊和单聊共用 SDK 上传入口。`ctx.UploadMedia` 从群聊事件读取 `group_openid`，业务无需解析群标识或拼接接口路径。
 
-下面是群聊发送文件的完整处理函数。`fileURL` 由业务提供，`FileTypeFile` 表示作为普通文件上传，不要求平台把它识别为可播放视频。
+下面的函数发送群聊文件。`fileURL` 由业务提供。`FileTypeFile` 按普通文件上传，不要求平台识别为可播放视频。
 
 ```go
 package guide
@@ -29,11 +29,11 @@ func replyGroupFile(ctx *types.Context, fileURL string) error {
 }
 ```
 
-将函数用于 `GROUP_AT_MESSAGE_CREATE`，或平台已开通的 `GROUP_MESSAGE_CREATE`。群内是否必须艾特机器人取决于平台事件订阅和权限，不由上传 API 决定。
+将函数用于 `GROUP_AT_MESSAGE_CREATE`，或平台已开通的 `GROUP_MESSAGE_CREATE`。注册方式见 [接收群聊消息](../group/receive.md)。
 
 ## 业务服务中上传
 
-后台任务不需要伪造 `Context`。明确指定 `message.SceneGroup` 和群 OpenID，结果返回给业务保存或发送。
+指定 `message.SceneGroup` 和群 OpenID 即可上传。后台任务无需构造 `Context`，业务可保存上传结果或用于发送。
 
 ```go
 package guide
@@ -56,18 +56,28 @@ func uploadGroupVoice(op context.Context, client *api.Client, groupOpenID, voice
 }
 ```
 
-上传接口为 `POST /v2/groups/{group_openid}/files`。`Target.ID` 不是普通群号码，必须来自当前机器人的平台 OpenID。不要跨机器人或跨会话复用 `file_info`，也不要把 `file_uuid` 当作它。
+上传请求为 `POST /v2/groups/{group_openid}/files`。
 
 ## 主要参数及限制
 
-请求字段与 [单聊上传](c2c-upload.md) 相同：`FileType` 为 1..4，URL、UploadID、FileData 三选一，`SrvSendMsg` 默认 false。上传默认不占用被动回复序号，之后发送通过 Context 正常分配 `msg_seq`。
+字段与 [单聊上传](c2c-upload.md) 相同。
 
-URL 上传是 QQ 服务器下载文件。本机浏览器能下载不代表 QQ 下载节点能完成；遇到平台超时或下载失败，需要结合错误码、下载来源和 trace 排查。SDK 不根据未公开错误码猜测权限或格式原因，也不隐式改用另一种上传方式。
+- `FileType` 使用平台类型 1..4。
+- `URL`、`UploadID`、`FileData` 三选一。
+- `SrvSendMsg` 默认 false。
 
-本地文件推荐 [分片上传](multipart-upload.md)。群聊与单聊都走同一上传实现，但各自使用对应会话的预上传、分片完成和合并接口。
+上传默认不占用被动消息（passive message）的回复序号。随后发送时，`Context` 正常分配 `msg_seq`。
+
+本地文件推荐 [分片上传](multipart-upload.md)。群聊与单聊共用上传实现。预上传、分片完成和合并各用目标会话的接口。
+
+## 注意事项
+
+- 群内是否需要艾特机器人，由平台订阅及权限决定。上传接口不改变接收条件。
+- `Target.ID` 使用当前机器人的平台群 OpenID。普通群号码不适用。
+- `file_info` 用于当前机器人和会话。`file_uuid` 不能代替 `file_info`。
+- QQ 服务器负责下载 URL。本机浏览器可以下载，QQ 下载节点仍可能失败。
+- 平台超时或下载失败时，结合错误码、下载来源和 trace 排查。SDK 不猜测未公开错误码对应的权限或格式问题。SDK 也不自动切换上传方式。
 
 ## 另请参阅
 
-- [富媒体概述与类型](README.md)
-- [群聊消息发送](../group/send.md)
-- [QQ 官方：群聊富媒体上传](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/v2_groups_group_openid_files.post.html)
+[富媒体概述与类型](README.md) · [群聊消息发送](../group/send.md) · [QQ 官方：群聊富媒体上传](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/v2_groups_group_openid_files.post.html)
