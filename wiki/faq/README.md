@@ -1,6 +1,6 @@
 # 常见问题
 
-按实际症状排查收发、上传和客户端显示。
+机器人没回复、文件传不上去，或消息在手机和电脑上显示不一样时，可以按下面的问题逐项排查。
 
 ## 群里 @机器人后没有回复
 
@@ -10,19 +10,19 @@
 - `OnMessage` 依次接收事件类型和处理函数。
 - 普通群 @ 命令使用 `GROUP_AT_MESSAGE_CREATE`。
 
-SDK 默认不输出日志。按[日志指南](../logging/README.md)注入日志器。media 示例加 `-debug-events` 后，可以检查以下信息。
+SDK 默认不输出日志。请先按[日志指南](../logging/README.md)配置日志。运行 `media` 示例时，还可以启用 `-debug-events`，根据下列日志判断问题发生在哪个阶段：
 
 - 是否收到事件。
-- 是否选中路由。
+- 事件有没有交给对应的处理函数。
 - 失败发生在上传还是发送。
 
 ## 收到“没有默认消息处理函数”或非命令未处理
 
-注册 `OnMessage` 或 `OnAnyMessage` 接收普通消息。注册 `/hello` 不会自动处理图片、普通文字或未知命令。处理优先级和旧版默认 handler 的区别见[事件路由](../getting-started/events/routing.md)。
+只注册 `/hello` 时，图片、普通文字和其他命令不会交给它处理。要接收这些消息，可以注册 `OnMessage` 或 `OnAnyMessage`。同时注册多个处理函数时，先查[事件路由](../getting-started/events/routing.md)里的匹配顺序和旧版默认处理规则。
 
 ## 菜单提示缺少 `-image-file`
 
-`-image-file` 是示例的启动参数。停止示例，带此参数重新启动。然后点击本地图片上传按钮。URL 上传按钮使用 `-image-url`。完整命令见[人工验收](../examples/README.md)。
+`-image-file` 是启动参数。添加该参数并重新启动示例，再点击本地图片上传按钮。测试 URL 上传时，使用启动参数 `-image-url`。完整命令见[人工验收](../examples/README.md)。
 
 ## URL 上传超时，本地文件上传却成功
 
