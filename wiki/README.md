@@ -6,7 +6,7 @@
 
 ## 开始使用
 
-1. [安装 SDK](getting-started/installation.md)，或使用本地 `replace` 接入尚未发布的工作区。
+1. [安装 SDK](getting-started/installation.md)，或使用本地 `replace` 引用本地 SDK 源码。
 2. [运行第一个机器人](getting-started/quick-start.md)，选择 WebSocket 或 Webhook。
 3. [注册命令与普通消息](getting-started/events/routing.md)，让不同类型的事件共用一个处理函数。
 4. [发送 Markdown 和按钮](server-api/messages/interactions/buttons.md)，再接入自己的业务服务。
@@ -41,13 +41,13 @@
 | 群聊管理 | [概述](server-api/group-management/README.md)、[成员](server-api/group-management/members.md)、[入群审批](server-api/group-management/join-requests.md) |
 | 频道管理 | [概述](server-api/channel-management/README.md)、[资料及子频道](server-api/channel-management/guilds-and-channels.md)、[成员与权限](server-api/channel-management/members-and-permissions.md)、[内容](server-api/channel-management/content.md) |
 
-## 日志、业务接入和验收
+## 日志、业务接入和测试
 
 完成接入后，可按业务需要查看以下页面。
 
 - [日志概述](logging/README.md)、[写入日志文件](logging/write-log.md)、[错误与 panic](logging/errors.md)。
 - [业务服务接入](advanced/business-integration.md)、[原始 API 与字段扩展](advanced/raw-api.md)、[测试消息发送](advanced/testing.md)。
-- [运行示例与人工验收](examples/README.md)、[常见问题](faq/README.md)、[SDK 覆盖范围](reference/coverage.md)。
+- [运行示例并测试](examples/README.md)、[常见问题](faq/README.md)、[SDK 覆盖范围](reference/coverage.md)。
 
 如果某个管理接口还没有现成的 SDK 方法，对应条目会给出官方文档或直接调用的示例。
 

@@ -10,7 +10,9 @@ package channel
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
+	"github.com/ProgramCX/GoQQBot/internal/apiwire"
 	"github.com/ProgramCX/GoQQBot/pkg/api"
 	"github.com/ProgramCX/GoQQBot/pkg/message"
 	channelMsg "github.com/ProgramCX/GoQQBot/pkg/message/channel"
@@ -20,30 +22,46 @@ import (
 )
 
 func sendToChannel(c *types.Context, channelId string, body *channelMsg.ChannelSendMessage) (*message.SendMessageResponse, error) {
-	path := fmt.Sprintf(api.CHANNEL_SEND_MESSAGE, channelId)
+	return sendLegacy(c, api.CHANNEL_SEND_MESSAGE, channelId, body)
+}
+
+func sendToDM(c *types.Context, guildId string, body *channelMsg.ChannelSendMessage) (*message.SendMessageResponse, error) {
+	return sendLegacy(c, api.CHANNEL_PRIVATE_MESSAGE, guildId, body)
+}
+
+func sendLegacy(c *types.Context, route, id string, body *channelMsg.ChannelSendMessage) (*message.SendMessageResponse, error) {
+	if c == nil || body == nil {
+		return nil, fmt.Errorf("event context and message body are required")
+	}
+	path, err := apiwire.Path(route, id)
+	if err != nil {
+		return nil, err
+	}
 	data, err := c.Client.Post(c.RequestContext(), path, body)
 	if err != nil {
 		return nil, fmt.Errorf("send channel message failed: %w", err)
 	}
-	var resp message.SendMessageResponse
-	if err := json.Unmarshal(data, &resp); err != nil {
-		return nil, fmt.Errorf("unmarshal send response failed: %w", err)
+	var response struct {
+		ID        string          `json:"id"`
+		Timestamp json.RawMessage `json:"timestamp"`
 	}
-	return &resp, nil
-
-}
-
-func sendToDM(c *types.Context, guildId string, body *channelMsg.ChannelSendMessage) (*message.SendMessageResponse, error) {
-	path := fmt.Sprintf(api.CHANNEL_PRIVATE_MESSAGE, guildId)
-	data, err := c.Client.Post(c.RequestContext(), path, body)
-	if err != nil {
-		return nil, fmt.Errorf("send DM failed: %w", err)
+	if err := json.Unmarshal(data, &response); err != nil {
+		return nil, fmt.Errorf("decode successful channel send (message may have been sent): %w", err)
 	}
-	var resp message.SendMessageResponse
-	if err := json.Unmarshal(data, &resp); err != nil {
-		return nil, fmt.Errorf("unmarshal send response failed: %w", err)
+	result := &message.SendMessageResponse{ID: response.ID}
+	if len(response.Timestamp) == 0 {
+		return result, nil
 	}
-	return &resp, nil
+	if response.Timestamp[0] == '"' {
+		var timestamp time.Time
+		if err := json.Unmarshal(response.Timestamp, &timestamp); err != nil {
+			return nil, fmt.Errorf("decode channel send timestamp (message may have been sent): %w", err)
+		}
+		result.Timestamp = timestamp.Unix()
+	} else if err := json.Unmarshal(response.Timestamp, &result.Timestamp); err != nil {
+		return nil, fmt.Errorf("decode channel send timestamp (message may have been sent): %w", err)
+	}
+	return result, nil
 }
 
 func SendMessage(c *types.Context, channelId string, msg *channelMsg.ChannelSendMessage) (*message.SendMessageResponse, error) {
@@ -122,25 +140,15 @@ func SendEmbed(c *types.Context, channelId string, embed *channelMsg.MessageEmbe
 }
 
 func RecallChannelMessage(c *types.Context, channelId string, messageId string, hideTip bool) error {
-	path := fmt.Sprintf(api.CHANNEL_DELETE_MESSAGE, channelId, messageId)
-	if hideTip {
-		path += "?hidetip=true"
+	if c == nil {
+		return fmt.Errorf("event context is required")
 	}
-	_, err := c.Client.Request(c.RequestContext(), "DELETE", path, nil)
-	if err != nil {
-		return fmt.Errorf("recall channel message failed: %w", err)
-	}
-	return nil
+	return NewClient(c.Client).RecallChannelMessage(c.RequestContext(), channelId, messageId, RecallOptions{HideTip: hideTip})
 }
 
 func RecallDM(c *types.Context, guildId string, messageId string, hideTip bool) error {
-	path := fmt.Sprintf(api.CHANNEL_PRIVATE_DELETE, guildId, messageId)
-	if hideTip {
-		path += "?hidetip=true"
+	if c == nil {
+		return fmt.Errorf("event context is required")
 	}
-	_, err := c.Client.Request(c.RequestContext(), "DELETE", path, nil)
-	if err != nil {
-		return fmt.Errorf("recall DM failed: %w", err)
-	}
-	return nil
+	return NewClient(c.Client).RecallDirectMessage(c.RequestContext(), guildId, messageId, RecallOptions{HideTip: hideTip})
 }

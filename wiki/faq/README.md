@@ -22,7 +22,7 @@ SDK 默认不输出日志。请先按[日志指南](../logging/README.md)配置�
 
 ## 菜单提示缺少 `-image-file`
 
-`-image-file` 是启动参数。添加该参数并重新启动示例，再点击本地图片上传按钮。测试 URL 上传时，使用启动参数 `-image-url`。完整命令见[人工验收](../examples/README.md)。
+`-image-file` 是启动参数。添加该参数并重新启动示例，再点击本地图片上传按钮。测试 URL 上传时，使用启动参数 `-image-url`。完整命令见[示例启动参数](../examples/README.md)。
 
 ## URL 上传超时，本地文件上传却成功
 

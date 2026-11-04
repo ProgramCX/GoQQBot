@@ -358,9 +358,32 @@ func TestUploadRejectsBadPlansAndStopsBeforeMerge(t *testing.T) {
 	}
 }
 
-func TestRecallBothScenesEscapesAndPlatformErrors(t *testing.T) {
-	for _, scene := range []message.Scene{message.SceneC2C, message.SceneGroup} {
-		for _, code := range []int{0, 40062003, 40064004} {
+func TestRecallEscapesAndClassifiesPlatformErrors(t *testing.T) {
+	cases := []struct {
+		scene message.Scene
+		code  int
+		want  error
+	}{
+		{message.SceneC2C, 0, nil},
+		{message.SceneGroup, 0, nil},
+		{message.SceneChannel, 0, nil},
+		{message.SceneDirectMessage, 0, nil},
+		{message.SceneGroup, 40062003, ErrOperationDenied},
+		{message.SceneGroup, 40064004, ErrRecallWindowExpired},
+		{message.SceneC2C, 40064004, ErrRecallWindowExpired},
+		{message.SceneDirectMessage, 40012010, ErrAPIAccessDenied},
+		{message.SceneChannel, 306004, ErrOperationDenied},
+		{message.SceneGroup, 40061001, ErrInvalidAPIParameters},
+		{message.SceneC2C, 40061002, ErrInvalidMessageID},
+		{message.SceneGroup, 50065001, ErrRecallFailed},
+		{message.SceneChannel, 306001, ErrInvalidAPIParameters},
+		{message.SceneChannel, 306002, ErrInvalidMessageID},
+		{message.SceneChannel, 306003, ErrRecallMessageLookup},
+		{message.SceneChannel, 306005, ErrRecallFailed},
+		{message.SceneChannel, 306006, ErrRecallChannelLookup},
+	}
+	for _, tc := range cases {
+		t.Run(fmt.Sprintf("%s/%d", tc.scene, tc.code), func(t *testing.T) {
 			client := NewClient("test", "secret", WithHTTPClient(&http.Client{Transport: roundTrip(func(r *http.Request) (*http.Response, error) {
 				if r.URL.Path == "/app/getAppAccessToken" {
 					return response(`{"access_token":"token","expires_in":7200}`), nil
@@ -368,21 +391,21 @@ func TestRecallBothScenesEscapesAndPlatformErrors(t *testing.T) {
 				if r.Method != "DELETE" || !strings.Contains(r.URL.EscapedPath(), "a%2Fb/messages/m%2Fn") {
 					t.Fatal("recall did not escape IDs")
 				}
-				if code == 0 {
+				if tc.code == 0 {
 					return response(""), nil
 				}
-				return response(fmt.Sprintf(`{"code":%d}`, code)), nil
+				return response(fmt.Sprintf(`{"code":%d,"trace_id":"recall-trace"}`, tc.code)), nil
 			})}))
-			err := client.RecallMessage(context.Background(), message.Target{Scene: scene, ID: "a/b"}, "m/n")
+			err := client.RecallMessage(context.Background(), message.Target{Scene: tc.scene, ID: "a/b"}, "m/n")
 			var failure *APIError
-			if code == 0 {
+			if tc.code == 0 {
 				if err != nil {
 					t.Fatal(err)
 				}
-			} else if !errors.As(err, &failure) || failure.Code != code {
+			} else if !errors.Is(err, tc.want) || !errors.As(err, &failure) || failure.Code != tc.code || failure.TraceID != "recall-trace" {
 				t.Fatalf("recall: %v", err)
 			}
-		}
+		})
 	}
 }
 

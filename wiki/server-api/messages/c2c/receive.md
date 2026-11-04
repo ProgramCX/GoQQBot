@@ -2,6 +2,28 @@
 
 用带事件类型的 `OnMessage` 接收无需命令前缀的单聊对话。
 
+## 配置事件订阅
+
+### 使用 WebSocket
+
+将所需条目合并到 `config.yaml` 现有的 `connection.websocket.intents` 列表，保留其他业务订阅。保存后重启机器人。
+
+```yaml
+connection:
+  mode: websocket
+  websocket:
+    intents:
+      - GROUP_AND_C2C_EVENT
+```
+
+[全部 Intent 与下属事件](../../../getting-started/events/intents.md)
+
+### 使用 Webhook
+
+在 QQ 机器人运营与管理后台选择 **开发设置 → 事件订阅与回调**。将接入方式设为 **Webhook**。在 **接收事件配置** 选择 **部分接收**，按事件标识勾选「单聊事件」里的 **C2C消息事件**（`C2C_MESSAGE_CREATE`）。保存设置。已选 **全部接收** 时，无需逐项勾选。
+
+[QQ 机器人运营与管理后台](https://q.qq.com/qqbot/dashboard/) · [配置 HTTPS 回调](../../../getting-started/events/webhook.md)
+
 ## 读取正文和图片
 
 在机器人启动前调用下面的注册函数。示例把正文和图片附件交给业务函数。

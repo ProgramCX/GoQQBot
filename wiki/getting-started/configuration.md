@@ -88,17 +88,20 @@ SDK 会复制你传入的配置和订阅列表。Bot 创建后，你可以修改
 在配置里填写订阅名称，SDK 会用 `IntentMask` 转成网关需要的值。
 
 - `GUILDS`、`GUILD_MEMBERS`、`GUILD_MESSAGES`、`GUILD_MESSAGE_REACTIONS`。
-- `DIRECT_MESSAGE`、`GROUP_AND_C2C_EVENT`、`INTERACTION`。
+- `DIRECT_MESSAGE`、`GROUP_MEMBER_EVENT`、`GROUP_AND_C2C_EVENT`、`INTERACTION`。
 - `MESSAGE_AUDIT`、`FORUMS_EVENT`、`AUDIO_ACTION`、`PUBLIC_GUILD_MESSAGES`。
+- `OPEN_FORUM_EVENT`、`AUDIO_OR_LIVE_CHANNEL_MEMBER`。
 
 ## 注意事项
+
+配置前可查[全部 Intent 与下属事件](events/intents.md)，接入选择见[连接方式对比](events/connection.md)。
 
 - 配置文件路径由调用方提供。YAML 中的 `${ENV_VAR}` 会按原样读取。
 - 缺少凭证、容量是负数或连接模式写错时，创建 Bot 会失败。分片设置无效或 WebSocket 订阅名称未知时，也会返回错误。
 - 可选字段填 0 时会使用默认值。例如 `queueSize: 0` 会用默认队列容量。
 - 对应的 `runtime.pool` 字段未设置时，SDK 才会读取旧的 `server.pool`。
 - SDK 会忽略 `bot.token`。凭证填写方式见[获取访问凭证](credentials.md)。
-- 订阅名称区分大小写。SDK 目前认不出 `GROUP_MEMBER_EVENT`，填进 WebSocket 配置会报错。如果已在 QQ 平台订阅相应事件，Webhook 仍能收到原始事件。
+- 订阅名称区分大小写。WebSocket 中使用 `GROUP_MEMBER_EVENT` 订阅成员变更和入群申请。Webhook 的订阅在 QQ 平台配置。
 - 配置校验通过后，事件权限仍由 QQ 平台检查。SDK 有时能收到事件，但还没有为它定义专门的 Go 类型。
 
 ## 另请参阅

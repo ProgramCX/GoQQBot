@@ -184,8 +184,9 @@ func IntentMask(names []string) (uint32, error) {
 	bits := map[string]uint32{
 		"GUILDS": 1 << 0, "GUILD_MEMBERS": 1 << 1, "GUILD_MESSAGES": 1 << 9,
 		"GUILD_MESSAGE_REACTIONS": 1 << 10, "DIRECT_MESSAGE": 1 << 12,
+		"OPEN_FORUM_EVENT": 1 << 18, "AUDIO_OR_LIVE_CHANNEL_MEMBER": 1 << 19,
 		"GROUP_AND_C2C_EVENT": 1 << 25, "INTERACTION": 1 << 26, "MESSAGE_AUDIT": 1 << 27,
-		"FORUMS_EVENT": 1 << 28, "AUDIO_ACTION": 1 << 29, "PUBLIC_GUILD_MESSAGES": 1 << 30,
+		"GROUP_MEMBER_EVENT": 1 << 24, "FORUMS_EVENT": 1 << 28, "AUDIO_ACTION": 1 << 29, "PUBLIC_GUILD_MESSAGES": 1 << 30,
 	}
 	var mask uint32
 	for _, name := range names {

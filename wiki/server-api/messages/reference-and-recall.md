@@ -67,14 +67,28 @@ func SendAndRecall(ctx *types.Context) error {
 
 ## 权限和引用可靠性
 
-按发送场景选撤回入口。频道撤回使用[频道专用旧入口](channel/messages.md)。
+按发送场景选撤回入口。频道撤回需要隐藏提示时，使用[频道专用入口](channel/messages.md)。
 
 ## 注意事项
+
+- 通过 `errors.Is` 判断下表中的错误类别。通过 `errors.As` 读取 `*api.APIError`，可取得原始错误码、HTTP 状态及 TraceID。通用错误或未识别的错误码也会保留在 `*api.APIError` 中。
+- QQ 返回查询或撤回失败时，先确认消息是否仍在，再决定是否重试。SDK 不会自动重试撤回。
+
+| 平台错误码 | SDK 错误 | 含义 |
+| --- | --- | --- |
+| `40012010` | `api.ErrAPIAccessDenied` | 应用没有接口访问权限 |
+| `40062003`、`306004` | `api.ErrOperationDenied` | 机器人没有操作权限 |
+| `40064004` | `api.ErrRecallWindowExpired` | 超过撤回时限 |
+| `40061001`、`306001` | `api.ErrInvalidAPIParameters` | 请求参数无效 |
+| `40061002`、`306002` | `api.ErrInvalidMessageID` | 消息 ID 无效 |
+| `306003` | `api.ErrRecallMessageLookup` | QQ 未能获取消息 |
+| `306006` | `api.ErrRecallChannelLookup` | QQ 未能获取子频道 |
+| `50065001`、`306005` | `api.ErrRecallFailed` | QQ 报告撤回失败 |
 
 - `MessageScene` 为 nil 时，`MessageIndex` 返回空串。
 - `Context.Recall` 不默认撤回接收消息，也不从 REFIDX 推算消息 ID。
 - 单聊只允许撤回机器人消息。群聊撤回成员消息需要机器人管理员权限。QQ 按平台规则检查两分钟窗口和最终资格。
-- `Context.Recall` 不支持频道撤回。
+- `Context.Recall` 支持子频道和频道私信。频道私信只能撤回机器人自己的消息。
 - 多级引用可能收到不一致的 `msg_idx/ref_msg_idx`、`TMP_` 索引或折叠后的文本摘要。SDK 原样保留。
 - SDK 不保证全局稳定 ID 或恢复完整引用链。展示索引不足以支撑业务桥接、消息关联和历史索引。
 

@@ -11,9 +11,11 @@
 | 正文内可点击命令 | `text.Input`、`text.Enter` | 用户发送后进入 `OnCommand` |
 | 快捷菜单操作 | 平台侧配置菜单 | `OnMenu` |
 
-## 准备订阅
+## 配置事件订阅
 
-[WebSocket](../../../getting-started/events/websocket.md) 同时订阅消息与互动事件。[Webhook](../../../getting-started/events/webhook.md) 在开放平台配置对应订阅。
+### 使用 WebSocket
+
+将所需条目合并到 `config.yaml` 现有的 `connection.websocket.intents` 列表，保留其他业务订阅。保存后重启机器人。
 
 ```yaml
 connection:
@@ -23,6 +25,14 @@ connection:
       - GROUP_AND_C2C_EVENT
       - INTERACTION
 ```
+
+[全部 Intent 与下属事件](../../../getting-started/events/intents.md)
+
+### 使用 Webhook
+
+在 QQ 机器人运营与管理后台选择 **开发设置 → 事件订阅与回调**。将接入方式设为 **Webhook**。在 **接收事件配置** 选择 **部分接收**，按事件标识勾选`INTERACTION_CREATE`（互动事件）。保存设置。已选 **全部接收** 时，无需逐项勾选。
+
+[QQ 机器人运营与管理后台](https://q.qq.com/qqbot/dashboard/) · [配置 HTTPS 回调](../../../getting-started/events/webhook.md)
 
 ## 按任务阅读
 
@@ -53,7 +63,7 @@ go run ./examples/interactions -config config.yaml
 
 - SDK 配置不会替应用申请权限、创建菜单或更改平台订阅。
 - 消息回复和 ACK 分属不同操作，无法互相替代。SDK 不自动选择成功响应。
-- 按钮展示、平台权限和客户端兼容性需要在真实 QQ 中验收。本地测试无法验证这些结果。
+- 按钮展示、平台权限和客户端兼容性需要在 QQ 客户端测试。本地测试无法验证这些结果。
 
 ## 另请参阅
 

@@ -1,6 +1,30 @@
 # 添加和读取频道表情表态
 
-表情表态（reaction）把表情附在已有频道消息上。使用 `api/channel` 添加、删除或查询表态用户。
+表情表态（reaction）把表情附在已有频道消息上。用 `channel.NewClient(client)` 创建频道客户端，再调用 `AddReaction`、`RemoveReaction` 或 `ListReactionUsers`。
+
+## 配置事件订阅
+
+下列订阅用于接收用户表态通知。主动添加、删除和查询表态可直接调用接口。
+
+### 使用 WebSocket
+
+将所需条目合并到 `config.yaml` 现有的 `connection.websocket.intents` 列表，保留其他业务订阅。保存后重启机器人。
+
+```yaml
+connection:
+  mode: websocket
+  websocket:
+    intents:
+      - GUILD_MESSAGE_REACTIONS
+```
+
+[全部 Intent 与下属事件](../../../getting-started/events/intents.md)
+
+### 使用 Webhook
+
+在 QQ 机器人运营与管理后台选择 **开发设置 → 事件订阅与回调**。将接入方式设为 **Webhook**。在 **接收事件配置** 选择 **部分接收**，按事件标识勾选`MESSAGE_REACTION_ADD` 和 `MESSAGE_REACTION_REMOVE`。保存设置。已选 **全部接收** 时，无需逐项勾选。
+
+[QQ 机器人运营与管理后台](https://q.qq.com/qqbot/dashboard/) · [配置 HTTPS 回调](../../../getting-started/events/webhook.md)
 
 ## 添加一个系统表情表态
 
@@ -48,8 +72,7 @@ func FirstReactionUsers(ctx *types.Context, channelID, messageID, emojiID string
 
 - 表态不会发送表情图片。图片 URL 无法充当表情 ID。
 - 平台决定表情是否可用、ID 的范围及权限。SDK 没有统一的表情 ID 到图片 URL 的转换。
-- 旧方法直接拼接非空 `cookie`，未转义查询参数。`+`、`&`、`=` 等字符可能导致分页请求错误。空游标的首页示例无法覆盖这些分页情况。
-- 自行分页时，可用[底层请求](../../../advanced/raw-api.md)中的 `Client.Request`。用 `url.Values` 编码参数，并按官方接口验证。
+- 查询下一页时，原样传入上一页返回的 `Cookie`。SDK 负责查询参数编码。官方只在第一页读取 `Limit`，默认 20，最多 50。特殊接口可通过[底层请求](../../../advanced/raw-api.md)调用。
 
 ## 另请参阅
 

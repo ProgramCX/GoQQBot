@@ -1,5 +1,7 @@
 # 官方 API 覆盖核对
 
+此页保留补齐群聊和频道接口之前的逐项核对记录。现行 SDK 覆盖见 [Wiki 覆盖范围](../wiki/reference/coverage.md)。新增群管理、频道管理和频道消息接口的调用示例见[群聊管理](../wiki/server-api/group-management/README.md)、[频道管理](../wiki/server-api/channel-management/README.md)和[频道消息](../wiki/server-api/messages/channel/README.md)。
+
 核对日期：2026-11-04。依据当前 [API v2 文档](https://bot.q.qq.com/wiki/develop/api-v2/)及其导航，读取服务端接口、事件等 160 个页面，对照当前工作区源码。本次只作覆盖审查，不新增 API，不将平台权限未开放误判为 SDK 缺失。
 
 判定口径：有明确公开方法和请求/响应处理才算已封装；有 EventId、裸 JSON、WithField 或 Client.Request，不等于该领域已经具备类型化 SDK。已封装也不等于真实 QQ 联调已通过，更不保证每个客户端显示一致。表中的状态是实现覆盖，不是平台权限判断。
