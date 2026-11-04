@@ -1,6 +1,6 @@
 # 服务端接口
 
-本目录沿用 QQ 官方服务端接口的模块划分。示例优先使用 `Context` 的便捷方法；后台任务或独立服务使用 `api.Client`，不需要启动机器人事件连接。
+服务端接口可按 QQ 官方模块查找。处理消息时，优先用 `Context` 的便捷方法。后台任务和独立服务可直接用 `api.Client`。这些服务无需启动机器人事件连接。
 
 | 官方模块 | 从这里开始 | 当前 SDK 范围 |
 | --- | --- | --- |
@@ -13,9 +13,11 @@
 | 群聊管理 | [群聊管理](group-management/README.md) | 查询、成员管理和审批尚无类型化封装 |
 | 频道管理 | [频道管理](channel-management/README.md) | 管理与内容类接口主要尚未封装 |
 
-“已封装”表示存在可调用的 SDK 方法，不代表当前机器人已经获得平台权限，也不代表所有客户端效果均已实机验证。`Client.Request` 可以调用某条路径，不等于该模块已有专用请求模型、响应模型或业务校验。
+
 
 ## 按调用方式选择入口
+
+按处理函数或后台服务的需求选择方法。
 
 | 需求 | 入口 |
 | --- | --- |
@@ -25,8 +27,11 @@
 | 上传后交给业务保存 | `client.UploadFile`、`client.UploadMarkdownImage` |
 | 调用尚未封装的接口 | [原始 API 扩展](../advanced/raw-api.md) |
 
+## 注意事项
+
+- “已封装”表示存在可调用的 SDK 方法。机器人权限和客户端显示仍需分别验证。
+- `Client.Request` 可调用原始路径。专用请求模型和响应模型以对应模块的封装为准。业务校验也以模块实际封装为准。
+
 ## 另请参阅
 
-- [API 调用、超时与自定义 HTTP 客户端](../getting-started/api-calls.md)
-- [SDK 覆盖范围](../reference/coverage.md)
-- [QQ 官方服务端接口导航](https://bot.q.qq.com/wiki/develop/api-v2/)
+[API 调用、超时与自定义 HTTP 客户端](../getting-started/api-calls.md) · [SDK 覆盖范围](../reference/coverage.md) · [QQ 官方服务端接口导航](https://bot.q.qq.com/wiki/develop/api-v2/)
