@@ -4,7 +4,7 @@
 
 ## 将消息交给业务服务
 
-在机器人启动前调用下面的注册函数。业务服务收到独立的解码结果，可读取作者、卡片和引用条目。
+在机器人启动前调用下面的注册函数。业务服务接收解析后的消息副本，可以从中读取发送者、卡片和引用条目。
 
 ```go
 package guide
@@ -46,7 +46,7 @@ func RegisterGroupReceiver(bot *goqqrobot.Bot, consume func(context.Context, *me
 
 ## 订阅不等于注册
 
-为常规群 @和单聊消息订阅 `GROUP_AND_C2C_EVENT`。配置方式见[事件订阅](../../../getting-started/events/README.md)。
+为群聊中 @机器人的消息和单聊消息订阅 `GROUP_AND_C2C_EVENT`。配置方式见[事件订阅](../../../getting-started/events/README.md)。
 
 ## 注意事项
 

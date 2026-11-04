@@ -23,7 +23,7 @@ func ReplyGroupMenu(ctx *types.Context) error {
 }
 ```
 
-使用 `AutoSend()` 表达自动发送偏好。按钮的详细用法见[发送按钮](../interactions/buttons.md)。
+使用 `AutoSend()` 请求客户端在点击按钮后自动发送命令。按钮的详细用法见[发送按钮](../interactions/buttons.md)。
 
 ## 后台业务发到明确的群
 
@@ -51,7 +51,7 @@ func NotifyGroup(ctx context.Context, client *api.Client, groupOpenID string) (*
 
 ## 群聊不能自动适配的能力
 
-跨场景复用时，可用 `.Strict()` 在本地发现不支持的交互提示。
+同一个按钮用于单聊和群聊时，可用 `.Strict()` 检查当前场景是否支持所设的交互选项。
 
 ## 注意事项
 

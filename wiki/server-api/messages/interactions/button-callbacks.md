@@ -1,6 +1,6 @@
 # 处理按钮回调
 
-用同一个按钮 ID 关联按钮和处理函数。为 `button.Callback(...).ID("refresh")` 注册 `OnButton("refresh", ...)`。在 `bot.Run` 前调用下面的注册函数。业务数据由 `ctx.Interaction()` 读取。
+点下回调按钮后，SDK 会按按钮 ID 找到处理函数。给按钮设为 `button.Callback(...).ID("refresh")`，再用 `OnButton("refresh", ...)` 注册处理函数。注册要在 `bot.Run` 之前完成。处理函数里用 `ctx.Interaction()` 读取按钮带来的数据。
 
 ```go
 package guide
@@ -52,9 +52,9 @@ SDK 按以下优先级选择一个处理函数。
 | `event.Data.Resolved.ButtonID` | 按钮标识 |
 | `event.Data.Resolved.ButtonData` | 按钮携带的业务数据 |
 | `event.Scene`、会话和用户字段 | 场景及操作者信息，按平台实际下发读取 |
-| `event.Raw` | 独立原始快照 |
+| `event.Raw` | 原始事件数据的副本 |
 
-`ctx.Interaction()` 不联网，也不要求 API 客户端。SDK 保留未知字段的原始数据。
+`ctx.Interaction()` 直接读取本地收到的事件。即使没有配置 API 客户端，也可以用这个方法。SDK 不认识的字段仍会留在原始数据里。
 
 ## 交互类型
 
@@ -92,7 +92,7 @@ ACK 请求为 `PUT /interactions/{d.id}`。`ctx.Reply` 使用外层事件 ID 作
 ## 注意事项
 
 - 示例假定刷新操作不需要额外授权。真实业务在发送成功 ACK 前需快速判断权限。
-- 成功 ACK 确认互动，后续耗时业务仍可能失败。回调中的后台协程需要明确的管理方。
+- 发出成功 ACK 后，后台操作仍可能失败。如果回调把操作交给后台协程，应用要负责管理这些协程。
 - `event.Raw` 可能包含敏感信息。整体写入日志会暴露这些字段。
 - 事件不一定下发结构体中的每个字段。`AuthorizeData` 是可选指针，读取前检查 nil。
 - 类型 14 的成功码可能触发客户端清空会话提示。SDK 不会清空业务数据库。
@@ -100,7 +100,7 @@ ACK 请求为 `PUT /interactions/{d.id}`。`ctx.Reply` 使用外层事件 ID 作
 - 平台要求指令回调类场景在三秒内响应。线程池排队也计入耗时。SDK 不自动 ACK、不自动重试，也不保证端到端时限。
 - 同一 `Context` 仅允许一次 ACK 尝试。并发调用及失败请求也计入次数。第二次返回 `types.ErrInteractionResponseAttempted`。调用前已取消的上下文不消耗次数。
 - 确需重试时，业务显式调用 `ctx.Client.AcknowledgeInteraction(op, event.ID, code)`。首次请求可能已到达平台。
-- 重复投递会创建新的 `Context`。一次 ACK 限制仅针对当前 `Context`，跨事件仍需用互动 ID 或业务键做幂等。
+- 同一次互动重复送达时，每次投递都会创建新的 `Context`，ACK 次数也分别计算。业务可以根据互动 ID 或业务键识别重复请求，避免重复执行操作。
 
 ## 另请参阅
 
