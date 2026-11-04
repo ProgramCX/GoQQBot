@@ -1,10 +1,10 @@
 # 读取图片、表情、卡片与转发
 
-`ctx.Message()` 把平台消息解码成业务可持有的快照。业务无需依赖 WebSocket、Webhook 或内部路由。
+通过 `ctx.Message()` 可以读取正文、附件、卡片和转发内容。无论事件来自 WebSocket 还是 Webhook，业务代码都使用同一套消息结构。
 
 ## 将完整消息交给业务服务
 
-下面的注册函数可用于群 @和单聊消息。业务回调只接收 Go 上下文和数据模型。回调无需处理 SDK 上下文或传输协议。
+下面的注册函数同时支持群聊中 @机器人的消息和单聊消息。回调只接收标准库的 `context.Context` 和消息数据，不依赖 SDK 的事件上下文或传输协议。
 
 ```go
 package guide
@@ -30,7 +30,7 @@ func RegisterRichReceiver(bot *goqqrobot.Bot, consume func(context.Context, *mes
 }
 ```
 
-业务服务可以先把 SDK 模型转为自己的消息模型，再持久化。返回的切片和解码数据归这次快照所有。快照不与原始 SDK 事件共享可变状态。
+业务服务可以把消息转换为自己的结构再保存。`ctx.Message()` 返回的切片和解析结果都是独立数据，修改后不会影响 SDK 保存的原始事件。
 
 ## 选择数据入口
 
@@ -38,19 +38,19 @@ func RegisterRichReceiver(bot *goqqrobot.Bot, consume func(context.Context, *mes
 | --- | --- | --- |
 | 原始文字、Unicode 表情或平台文本标签 | `m.Content` | 原样保留，不自动把标签转成图片 |
 | 当前消息附件 | `m.Attachments` | 平台下发的 URL、文件名、MIME、字节数、宽高等 |
-| 所有层级附件 | `m.AllAttachments()` | 按原消息及递归条目顺序展开 |
+| 所有层级附件 | `m.AllAttachments()` | 先列出当前消息的附件，再按顺序展开嵌套条目 |
 | 所有层级图片 | `m.Images()` | 按 MIME 筛选 |
 | 语音结果 | 附件的 `VoiceWAVURL`、`ASRReferText` | 平台提供的语音字段 |
 | 卡片、小程序、位置等 | `m.ARK` | 开放的 JSON 字段 |
-| 引用、并列或转发条目 | `m.MsgElements` | 递归保留作者、消息索引、正文、附件和 ARK |
+| 引用、并列或转发条目 | `m.MsgElements` | 保留各层的作者、消息索引、正文、附件和 ARK |
 | 场景扩展 | `m.MessageScene.Lookup(key)` | 按 `key=value` 提取，保留值里的等号 |
 | 尚未建模的字段 | `m.Raw`、条目的 `Raw` | 原始 JSON |
 
-`message.MessageAttachment` 和 `message.MessageScene` 是对应接收模型的兼容别名。SDK 仍保留旧的原始字段 `ArkData`、`Elements`。新业务优先使用类型化的 `ARK` 和 `MsgElements`。
+`message.MessageAttachment` 和 `message.MessageScene` 是对应接收模型的兼容别名。SDK 仍保留旧的原始字段 `ArkData`、`Elements`。新代码可通过 `ARK` 和 `MsgElements` 直接读取结构化数据。
 
 ## 读取可选卡片字段
 
-下面的函数只读数据，不联网。`jump_url` 是按实际载荷读取的字段示例。
+下面的函数只读数据，不联网。示例读取 `jump_url`。可用字段以实际收到的卡片数据为准。
 
 ```go
 package guide
@@ -76,7 +76,7 @@ func CardJumpURL(m *message.Received) (string, bool, error) {
 ## 注意事项
 
 - SDK 不自动下载附件、追踪网页、上传素材或补造字段。
-- 扁平附件列表丢失消息归属。`Images()` 不从文件名或 URL 推测图片类型。
+- 展开后的附件列表不标明每个附件属于哪条消息。`Images()` 不从文件名或 URL 推测图片类型。
 - 语音字段仅在平台提供时可用。卡片不保证含跳转或图片 URL。
 - 字段缺失时返回 `false, nil`。实际 JSON 类型与目标类型不符时返回解码错误。
 - 原始 JSON 可能含敏感授权数据。

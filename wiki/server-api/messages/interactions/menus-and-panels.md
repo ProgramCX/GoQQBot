@@ -1,10 +1,10 @@
 # 接收快捷菜单与指令面板事件
 
-SDK 可以接收快捷菜单互动，并按 `feature_id` 分发。
+用户点击快捷菜单后，SDK 可以根据 `feature_id` 调用对应的处理函数。
 
 ## 接收已配置的菜单操作
 
-先按官方方式配置菜单。在 `bot.Run` 前注册相同的功能 ID。
+先在 QQ 平台配置菜单，再用菜单的功能 ID 注册处理函数。注册要在 `bot.Run` 前完成。
 
 ```go
 package guide
@@ -36,15 +36,15 @@ func registerMenu(bot *goqqrobot.Bot) {
 
 ## 命令注册与平台资源
 
-`OnCommand("help", eventType, handler)` 注册本进程的 [消息路由](../../../getting-started/events/routing.md)。命令按钮让用户发送消息。菜单操作可能产生类型 12 互动，应走互动处理入口。
+`OnCommand("help", eventType, handler)` 注册本进程的 [消息路由](../../../getting-started/events/routing.md)。命令按钮让用户发送消息。如果点击菜单产生了类型 12 的互动事件，用 `OnMenu` 或 `OnInteraction` 接收。
 
-用 [`Client.Request`](../../../advanced/raw-api.md) 显式调用未封装的管理接口。按官方接口定义请求和响应模型，并处理权限与错误。
+用 [`Client.Request`](../../../advanced/raw-api.md) 调用 SDK 还没封装的管理接口。请求和响应的结构按官方文档定义，权限和错误由应用处理。
 
 ## 注意事项
 
 - SDK 尚未封装菜单查询与更新。指令面板（command panel）的增删改查也尚未封装。
 - 收到菜单回调只表示互动已送达。`OnCommand` 和回调注册均不会创建 QQ 菜单或指令面板。
-- `Client.Request` 提供原始请求能力。调用方自建模型与类型化 SDK 封装是两回事。
+- `Client.Request` 可以直接调用 QQ 的接口。请求和响应的结构由应用按官方文档定义。
 
 ## 另请参阅
 

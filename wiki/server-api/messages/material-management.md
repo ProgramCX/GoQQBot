@@ -1,10 +1,10 @@
 # 管理 Markdown 图片素材
 
-图片上传一次后，可在同一机器人的 Markdown 消息中复用。保存平台返回的素材引用即可。
+同一个机器人可以在多条 Markdown 消息里用同一张图片。上传一次，再把 QQ 返回的素材引用保存下来即可。
 
 ## 上传本地图片并展示
 
-下面的处理函数可用于单聊或群聊。上传不自动发送。展示由 `ctx.Reply` 完成。
+下面的处理函数在单聊和群聊里都能用。先上传图片，再用 `ctx.Reply` 把图片发到当前会话。
 
 ```go
 package guide
@@ -20,7 +20,7 @@ func replyChart(ctx *types.Context, imagePath string) error {
 }
 ```
 
-`image.Markdown(...)` 返回不可变的 `message.Outgoing`。消息可继续[组合按钮](interactions/buttons.md)、文本片段或图片转存校验。`MarkdownText(...)` 返回行内语法，可嵌入自己的 Markdown 模板。
+`image.Markdown(...)` 返回一份 `message.Outgoing`。可以在这份消息的基础上构造新消息，比如[加上按钮](interactions/buttons.md)、拼接文本片段，或开启图片转存校验。原来的消息保持原样。如果只需要在自定义模板中引用图片，可用 `MarkdownText(...)` 生成 Markdown 图片语法。
 
 ```go
 package guide
@@ -43,7 +43,7 @@ func replySavedChart(ctx *types.Context, image message.ImageMaterial) error {
 
 ## 与业务服务结合
 
-已有图表字节时，可用 `bytes.Reader` 省去临时文件。下面的函数不依赖接收事件或路由器。业务可以保存返回的素材。
+如果图表已经生成在内存里，用 `bytes.Reader` 就能直接上传，省去临时文件。下面的函数可以放在业务服务里直接调用。上传后可以保存素材，留到需要时再发。
 
 ```go
 package guide
@@ -66,9 +66,9 @@ func uploadChart(op context.Context, client *api.Client, pngBytes []byte) (*mess
 }
 ```
 
-`Reader` 是 SDK 借用的 `io.ReaderAt`。使用文件路径的版本会自行打开并关闭文件。高层接口同步计算哈希、上传及确认，使用有界哈希缓冲区。
+`Reader` 是 SDK 借用的 `io.ReaderAt`。使用文件路径的版本会自行打开并关闭文件。高层接口会在返回前算好哈希、上传图片并确认结果。计算哈希用的缓冲区有大小上限。
 
-应用可创建 `*api.Client`，再通过 `goqqrobot.WithAPIClient(client)` 注入 Bot。业务服务与处理函数可以共用认证缓存。业务服务无需引用 `internal` 包，也无需实现通用存储接口。
+业务服务和 Bot 可以用同一个 `*api.Client`，共用认证缓存。创建客户端后，用 `goqqrobot.WithAPIClient(client)` 把它传给 Bot。业务服务可以只用 SDK 的公开接口和自己的存储方式。
 
 应用可按业务键保存以下记录。SDK 不会自动缓存这些记录。
 
@@ -250,7 +250,7 @@ WebP、列表结果或数据库恢复的记录可能没有尺寸。可以显式�
 - 高层接口不缓存、不在后台上传，也不自动重试或删除素材。SDK 不根据同名文件或 MD5 去重。
 - PUT 使用与 Prepare 一致的 Content-Type。请求不带机器人认证或 Cookie，也不跟随重定向。
 - Prepare 或 Complete 返回了结果但 err 也不是 nil，表示 HTTP 已成功，但响应无法正常使用。任务或素材可能已经创建。
-- 上述情况会停止高层流程，不自动重发。使用底层方法时，业务保存所需状态并核对平台结果。
+- 遇到这种情况，高层方法会结束调用。分步调用时，由业务保存上传状态，并向平台核对结果。SDK 不会自动重发。
 - Raw、PresignedURL 和 PreviewURL 可能含临时鉴权信息。整体写入日志会暴露这些字段。
 - SDK 不进行无界分页。整数非法、`Total` 为负或数值溢出时，SDK 返回错误。
 - 删除接口使用素材 ID，URL 和消息 ID 不适用。素材删除后，新消息无法引用。已发送消息的转存副本不受此删除接口影响。
