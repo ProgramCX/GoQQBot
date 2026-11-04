@@ -1,6 +1,6 @@
 # 上传群聊富媒体
 
-群聊和单聊共用 SDK 上传入口。`ctx.UploadMedia` 从群聊事件读取 `group_openid`，业务无需解析群标识或拼接接口路径。
+群聊和单聊都可以用 `ctx.UploadMedia` 上传文件。群聊时，SDK 会从事件里读取 `group_openid`，并拼好请求路径。
 
 下面的函数发送群聊文件。`fileURL` 由业务提供。`FileTypeFile` 按普通文件上传，不要求平台识别为可播放视频。
 
@@ -33,7 +33,7 @@ func replyGroupFile(ctx *types.Context, fileURL string) error {
 
 ## 业务服务中上传
 
-指定 `message.SceneGroup` 和群 OpenID 即可上传。后台任务无需构造 `Context`，业务可保存上传结果或用于发送。
+指定 `message.SceneGroup` 和群 OpenID 即可上传。后台任务也能直接上传，省去构造 `Context` 的步骤。上传结果可以保存下来，也可以接着用于发送。
 
 ```go
 package guide
@@ -75,7 +75,7 @@ func uploadGroupVoice(op context.Context, client *api.Client, groupOpenID, voice
 - 群内是否需要艾特机器人，由平台订阅及权限决定。上传接口不改变接收条件。
 - `Target.ID` 使用当前机器人的平台群 OpenID。普通群号码不适用。
 - `file_info` 用于当前机器人和会话。`file_uuid` 不能代替 `file_info`。
-- QQ 服务器负责下载 URL。本机浏览器可以下载，QQ 下载节点仍可能失败。
+- 文件由 QQ 服务器从 URL 下载。即使本机浏览器能打开地址，QQ 也可能下载失败。
 - 平台超时或下载失败时，结合错误码、下载来源和 trace 排查。SDK 不猜测未公开错误码对应的权限或格式问题。SDK 也不自动切换上传方式。
 
 ## 另请参阅

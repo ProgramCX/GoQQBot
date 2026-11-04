@@ -32,7 +32,7 @@
 
 ## 选择指南
 
-按会话类型和文件位置选择上传方法。
+先看文件在哪里，再按单聊或群聊选择上传方法。
 
 - [单聊 URL 上传与发送](c2c-upload.md)
 - [群聊 URL 上传与业务服务集成](group-upload.md)
@@ -46,7 +46,7 @@
 - 临时下载地址不适合保存为永久业务引用。SDK 不自动缓存、刷新或跨会话迁移上传结果。
 - `SrvSendMsg` 为 true 时请求主动消息（proactive message）。平台检查资格和配额，见 [调用 OpenAPI](../../../getting-started/api-calls.md)。
 - `URL`、`UploadID`、`FileData` 三选一。官方将 `file_data` 描述为字符串，限制为 5M，但未明确编码。
-- SDK 原样传递 `file_data`，未验证任意二进制编码。Base64 等编码缺少依据。本地文件优先用分片入口。
+- SDK 会原样传递 `file_data`。官方没有明确说明是否支持 Base64 等编码，SDK 也没有验证任意二进制编码。上传本地文件时可以直接用分片上传。
 
 ## 另请参阅
 

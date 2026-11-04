@@ -1,6 +1,6 @@
 # 选择消息类型
 
-用 `pkg/message` 构造不可变的 `Outgoing`。构造过程不联网。用 `Build(scene)` 在本地校验，再用 `Context.Reply` 或 `Client.SendReply` 发送。
+用 `pkg/message` 构造 `Outgoing` 消息。链式设置返回新值，不修改原来的消息。构造与 `Build(scene)` 校验都在本地进行，调用 `Context.Reply` 或 `Client.SendReply` 时才发出请求。
 
 ## 按内容选择构造器
 
@@ -33,7 +33,7 @@ func BuildMessagePreview() (map[string]json.RawMessage, error) {
 
 ## 扩展字段
 
-用 `New(kind).WithField(name, value)` 添加新消息类型和字段。设置字段时会立即序列化为快照。
+用 `New(kind).WithField(name, value)` 添加新消息类型和字段。设置字段时，SDK 会将字段值编码成 JSON 并保存。后续修改原值不会影响消息。
 
 用 `errors.Is(err, message.ErrInvalidMessage)` 判断本地消息错误。
 
