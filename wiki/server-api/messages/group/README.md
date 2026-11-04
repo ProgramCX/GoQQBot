@@ -1,17 +1,17 @@
-# 群聊消息
+# 收发群聊消息
 
-群聊 @机器人消息与群全量消息使用不同事件名。选择平台已开通的事件注册处理函数，发送时则可以使用相同的上下文回复入口。
+群聊 @机器人消息与全量消息使用不同事件名。按平台开放的能力注册，回复时共用上下文入口。
 
 ## 事件与用途
 
 | 事件 | 用途 |
 | --- | --- |
 | `GROUP_AT_MESSAGE_CREATE` | 群里 @机器人触发的消息 |
-| `GROUP_MESSAGE_CREATE` | 已获准接收的群全量消息；仅注册处理函数不会开通权限 |
+| `GROUP_MESSAGE_CREATE` | 已获准接收的群全量消息 |
 
 ## 共用业务函数
 
-以下函数可以同时注册到单聊与群聊消息类型。
+将下面的函数同时注册到单聊与群聊消息类型。
 
 ```go
 package guide
@@ -23,11 +23,17 @@ func ReplyShared(ctx *types.Context) error {
 }
 ```
 
-不必在业务函数中拼群消息路径，也不必把 `group_openid` 传给回复方法。需要在后台发消息时，使用明确的 `message.Target{Scene: message.SceneGroup, ID: groupOpenID}`。
+上下文会选择群消息路径和 `group_openid`。后台发消息时，使用明确的 `message.Target{Scene: message.SceneGroup, ID: groupOpenID}`。
 
 ## 权限与边界
 
-`group_openid` 标识群会话，`member_openid` 标识该场景的用户，都不是普通群号或 QQ 号。群管理、禁言、成员移除等不是消息发送能力；当前 SDK 没有完整群管理领域封装。
+区分两个 OpenID。`group_openid` 标识群会话，`member_openid` 标识当前场景的用户。
+
+## 注意事项
+
+- 注册处理函数不会开通群全量消息权限。订阅前需确认平台已开放。
+- 群会话和成员的 OpenID 分别不同于普通群号和 QQ 号。
+- [群管理](../../group-management/README.md)与消息发送是两种能力。SDK 尚未完整封装群管理、禁言和成员移除。
 
 ## 另请参阅
 
