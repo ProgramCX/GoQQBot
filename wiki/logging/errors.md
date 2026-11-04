@@ -4,7 +4,7 @@
 
 ## 观察事件失败
 
-以下函数创建带观察函数的 Bot。示例只记录可控的元数据。
+下面的示例为 Bot 注册错误回调，只记录选定的诊断字段。
 
 ```go
 package guide
@@ -40,7 +40,7 @@ func NewObservedBot(path string, logger *slog.Logger) (*goqqrobot.Bot, error) {
 }
 ```
 
-观察函数在工作协程中同步执行。SDK 调用观察函数时不持锁。示例同时启用 SDK 日志和自定义观察日志。实际应用可在观察函数中只更新指标，避免重复打印故障。
+错误回调在当前工作协程中同步执行，SDK 调用时不持有锁。示例同时开启了 SDK 日志与回调日志。实际应用可让回调只更新指标，避免同一次故障被记录两遍。
 
 ## 错误类型
 
@@ -84,7 +84,7 @@ func NewObservedBot(path string, logger *slog.Logger) (*goqqrobot.Bot, error) {
 - 整体格式化 Context、原始 Payload、`PanicError.Value` 或 `Stack` 可能暴露敏感信息。记录 TraceID 时也应排除任意 URL、凭证和完整载荷。
 - 合并错误匹配 `context.Canceled` 时，仍可能含有 `HandlerError`。
 - `DiagnosticMessage()` 限制长度，并尽力脱敏。诊断文本不适合作为稳定的业务错误码。
-- 消息发送或素材完成时，接口可能返回了结果，但 `err` 也不是 nil。HTTP 可能已成功，失败发生在回包解析阶段。先核对结果的 `Raw` 和业务状态，再判断是否发送成功。
+- 发送消息或确认素材上传时，接口可能同时返回结果和错误。此时 HTTP 请求可能已经成功，错误出在解析响应的阶段。先核对结果中的 `Raw` 和业务状态，再判断操作是否成功。
 - SDK 不自动重试消息 POST 或失败的业务处理。
 
 ## 另请参阅

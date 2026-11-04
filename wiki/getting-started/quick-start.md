@@ -1,10 +1,10 @@
 # 创建第一个机器人
 
-用 WebSocket 接收单聊消息和群聊艾特。机器人收到 `/hello` 后回复。运行程序无需公网回调地址。
+这个机器人通过 WebSocket 接收单聊消息和群聊艾特。你发 `/hello`，它就会在当前会话回复。整个过程不需要公网回调地址。
 
 ## 准备配置
 
-在程序启动目录创建 `config.yaml`，填写 `appId` 和 `appSecret`。获取方式见[访问凭证](credentials.md)。
+在运行程序的目录里创建 `config.yaml`，填写 `appId` 和 `appSecret`。获取方式见[访问凭证](credentials.md)。
 
 ```yaml
 bot:
@@ -18,7 +18,7 @@ connection:
       - GROUP_AND_C2C_EVENT
 ```
 
-使用环境变量或密钥管理服务时，改用[内存配置](configuration.md#使用内存配置)。
+如果凭证来自环境变量或密钥管理服务，可以用[内存配置](configuration.md#使用内存配置)。
 
 ## 编写程序
 
@@ -59,14 +59,14 @@ func run() error {
 }
 ```
 
-在业务项目目录运行以下命令。
+打开终端，在业务项目目录运行以下命令。
 
 ```sh
 go mod tidy
 go run .
 ```
 
-在单聊发送 `/hello`。在群聊中，**艾特机器人后发送 `/hello`**。
+启动成功后，打开 QQ，在单聊发 `/hello`。在群聊里，**先艾特机器人，再发 `/hello`**。
 
 `/hello` -> WebSocket -> `OnCommand` -> 回复当前会话
 
@@ -74,7 +74,7 @@ go run .
 
 ## 接收普通消息
 
-在 `StartWithGracefulShutdown` 之前调用注册函数。示例只回复带正文的消息。
+想让机器人也回复普通文字，可以在 `StartWithGracefulShutdown` 之前注册下面的处理函数。这个示例只回复带文字的消息。
 
 ```go
 package guide
@@ -95,14 +95,14 @@ func RegisterMessages(bot *goqqrobot.Bot) {
 }
 ```
 
-已注册命令优先处理。其他文字、未知命令和附件消息由 `OnMessage` 接收。附件读取方法见[事件路由](events/routing.md)。
+收到注册过的命令时，SDK 会先交给命令处理函数。普通文字、未知命令和附件消息会交给 `OnMessage`。附件读取方法见[事件路由](events/routing.md)。
 
 ## 注意事项
 
-- 机器人需已开通相应的单聊和群聊能力。
-- SDK 不展开 YAML 中的环境变量。
-- 提交真实配置会泄露凭证。将真实配置留在本地。
-- 图片消息可能没有文字。只检查 `ctx.Text()` 会漏掉仅含附件的消息。
+- 机器人需要在 QQ 开放平台开通对应的单聊或群聊能力，才能收到相应消息。
+- YAML 中的环境变量占位符会按原样读取。
+- 真实配置留在本机即可。提交到仓库会泄露凭证。
+- 用户只发图片时，`ctx.Text()` 可能为空。需要处理图片时，记得读取附件。
 
 ## 另请参阅
 

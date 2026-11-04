@@ -1,6 +1,6 @@
 # 如何写入日志文件
 
-用标准库 `log/slog` 创建日志器，再通过 `goqqrobot.WithLogger` 注入。应用负责创建和关闭文件，SDK 不接管文件。
+用标准库 `log/slog` 创建日志器，再通过 `goqqrobot.WithLogger` 传给 Bot。日志文件由应用创建和关闭。
 
 ## 同时写入文件和控制台
 
@@ -45,7 +45,7 @@ func run() error {
 }
 ```
 
-`os.O_APPEND` 保留已有日志，启动时不会截断文件。只写文件时，将 `io.MultiWriter(file, os.Stdout)` 改为 `file`。业务代码也可使用同一个 `logger`。注入日志器不会修改全局 `slog.Default()`。
+`os.O_APPEND` 保留已有日志，启动时不会截断文件。只写文件时，将 `io.MultiWriter(file, os.Stdout)` 改为 `file`。业务代码也可使用同一个 `logger`。为 Bot 设置日志器不会修改全局的 `slog.Default()`。
 
 ## 格式与级别
 
@@ -75,8 +75,7 @@ func NewLogger(output io.Writer) (*slog.Logger, *slog.LevelVar) {
 
 ## 注意事项
 
-- 在机器人退出后关闭文件。多个服务共用日志器时，由外层服务[统一管理关闭](../getting-started/lifecycle.md)。
-- 运行中的处理函数仍可能写入日志。文件关闭后，日志写入会失败。
+- 处理函数在退出前仍可能写日志。等机器人退出后再关闭文件，避免写入失败。多个服务共用日志器时，由外层服务[统一管理关闭](../getting-started/lifecycle.md)。
 - 传入 `WithLogger(nil)` 或省略该选项，SDK 都会保持静默。
 - SDK 不轮转文件，也不管理日志保留周期。
 
