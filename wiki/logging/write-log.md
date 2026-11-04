@@ -1,10 +1,10 @@
 # 如何写入日志文件
 
-使用标准库 `log/slog` 创建日志器，通过 `goqqrobot.WithLogger` 注入。文件由应用创建和关闭，SDK 不接管所有权。
+用标准库 `log/slog` 创建日志器，再通过 `goqqrobot.WithLogger` 注入。应用负责创建和关闭文件，SDK 不接管文件。
 
 ## 同时写入文件和控制台
 
-下面是完整程序。先按[快速开始](../getting-started/quick-start.md)准备 `config.yaml`：
+先按[快速开始](../getting-started/quick-start.md)准备 `config.yaml`，再运行完整程序。
 
 ```go
 package main
@@ -45,13 +45,11 @@ func run() error {
 }
 ```
 
-`os.O_APPEND` 保留既有日志，而不是启动时截断文件。只写文件时将 `io.MultiWriter(file, os.Stdout)` 改为 `file`。应用自己写业务日志也应使用同一个 `logger`，注入不会改写全局 `slog.Default()`。
-
-文件在机器人退出后关闭；若应用有多个服务共用日志器，应由更外层的服务生命周期统一关闭。
+`os.O_APPEND` 保留已有日志，启动时不会截断文件。只写文件时，将 `io.MultiWriter(file, os.Stdout)` 改为 `file`。业务代码也可使用同一个 `logger`。注入日志器不会修改全局 `slog.Default()`。
 
 ## 格式与级别
 
-下面的完整函数创建 JSON 日志器，返回 `LevelVar` 供应用在运行中调整：
+用下面的函数创建 JSON 日志器。返回的 `LevelVar` 可在运行中调整级别。
 
 ```go
 package guide
@@ -69,14 +67,19 @@ func NewLogger(output io.Writer) (*slog.Logger, *slog.LevelVar) {
 }
 ```
 
-调用方可用 `level.Set(slog.LevelDebug)` 开启 Debug，使用 `level.Set(slog.LevelInfo)` 恢复。命令注册等诊断信息位于 Debug；开启级别不改变业务消息处理行为。传 `WithLogger(nil)` 或省略该选项会保持 SDK 静默。
+用 `level.Set(slog.LevelDebug)` 开启 Debug，再用 `level.Set(slog.LevelInfo)` 恢复 Info。命令注册等诊断信息使用 Debug 级别。调整级别不改变消息处理行为。
 
 ## 日志轮转
 
-SDK 不做文件轮转或日志保留管理。生产部署可写标准输出交给运行环境收集，或由应用提供实现 `io.Writer` 的轮转输出，再交给 slog Handler。不要让日志器在关闭后仍被运行中的处理函数使用。
+生产部署可把标准输出交给运行环境收集。应用也可以提供实现 `io.Writer` 的轮转输出，再交给 slog Handler。
+
+## 注意事项
+
+- 在机器人退出后关闭文件。多个服务共用日志器时，由外层服务[统一管理关闭](../getting-started/lifecycle.md)。
+- 运行中的处理函数仍可能写入日志。文件关闭后，日志写入会失败。
+- 传入 `WithLogger(nil)` 或省略该选项，SDK 都会保持静默。
+- SDK 不轮转文件，也不管理日志保留周期。
 
 ## 另请参阅
 
-- [错误处理及 panic 观察](errors.md)
-- [运行与关闭](../getting-started/lifecycle.md)
-- [官方 TraceID 说明](https://bot.q.qq.com/wiki/develop/api-v2/dev-prepare/api-call-guide.html)
+[错误处理及 panic 观察](errors.md) · [运行与关闭](../getting-started/lifecycle.md) · [官方 TraceID 说明](https://bot.q.qq.com/wiki/develop/api-v2/dev-prepare/api-call-guide.html)
