@@ -1,10 +1,10 @@
-# 频道消息
+# 收发频道消息
 
-频道中的子频道消息和频道私信可以使用统一上下文回复；它们与 QQ 群聊、QQ 单聊的 ID 和权限不同。
+子频道消息和频道私信可以共用 `ctx.Reply`。
 
 ## 接收并回复频道 @消息
 
-以下函数在运行前注册。WebSocket 接收频道 @消息时选择 `PUBLIC_GUILD_MESSAGES`；频道私信选择 `DIRECT_MESSAGE`。订阅仍需匹配平台实际开放的权限。
+在机器人运行前注册以下函数。通过 WebSocket 订阅频道 @消息时选择 `PUBLIC_GUILD_MESSAGES`。频道私信选择 `DIRECT_MESSAGE`。
 
 ```go
 package guide
@@ -25,9 +25,9 @@ func RegisterChannel(bot *goqqrobot.Bot) {
 }
 ```
 
-`MESSAGE_CREATE` 是另一种频道消息事件，接收范围受权限限制；不要通过更换事件名假定已经取得全量消息权限。
-
 ## ID 的区别
+
+`ctx.Reply` 根据当前事件选择目标。各场景的标识见下表。
 
 | 场景 | `message.Scene` | 发送目标 |
 | --- | --- | --- |
@@ -35,11 +35,16 @@ func RegisterChannel(bot *goqqrobot.Bot) {
 | 频道私信 | `SceneDirectMessage` | 私信会话的 `guild_id` |
 | QQ 单聊 | `SceneC2C` | `user_openid` |
 
-统一 `ctx.Reply` 根据当前事件选择目标。不要把频道私信的 `guild_id` 替换为普通频道服务器 ID。
-
 ## 当前覆盖范围
 
-已有发送、频道私信发送、撤回和表态旧封装；没有完整的频道成员、身份组、公告、帖子、日程等管理封装。创建频道私信会话的 `POST /users/@me/dms` 也尚未封装。
+SDK 已有频道发送、私信发送、撤回和表态的旧封装。
+
+## 注意事项
+
+- 订阅仍需匹配平台开放的权限。换成 `MESSAGE_CREATE` 不会开通全量消息权限。
+- 频道消息和私信与 QQ 群聊、单聊使用不同 ID 和权限。普通频道服务器 ID 无法替代私信会话的 `guild_id`。
+- SDK 尚未完整封装[频道管理](../../channel-management/README.md)，包括成员、身份组、公告、帖子和日程。
+- 创建频道私信会话的 `POST /users/@me/dms` 尚未封装。
 
 ## 另请参阅
 
