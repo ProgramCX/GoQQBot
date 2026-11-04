@@ -50,7 +50,7 @@ func NotifyPrivate(ctx context.Context, client *api.Client, userOpenID string) (
 
 ## 序号与失败处理
 
-同一 Context 上的单聊回复会预留递增的 `msg_seq`。并发调用也会拿到不同序号。使用 `.Sequence(n)` 可管理受控重试。
+用同一个 `Context` 回复多次时，SDK 会分配递增的 `msg_seq`。并发回复也会使用不同序号。需要自行控制重试时，可以通过 `.Sequence(n)` 指定序号。
 
 `ctx.SendReply(ctx.RequestContext(), outgoing)` 返回发送结果。撤回使用 `ID`，展示引用使用 `ExtInfo.RefIndex`。详见[引用与撤回](../reference-and-recall.md)。
 

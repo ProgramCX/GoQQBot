@@ -28,7 +28,7 @@ func RemoveChannelReaction(ctx *types.Context, channelID, messageID, emojiID str
 
 ## 查询第一页用户
 
-以下代码只查询首页。返回的 `Cookie` 和 `IsEnd` 用于平台分页。
+下面的示例查询第一页。可用 `IsEnd` 判断是否还有下一页，并用返回的 `Cookie` 继续查询。
 
 ```go
 package guide

@@ -70,9 +70,9 @@ func RecallChannelDM(ctx *types.Context, dmGuildID, messageID string) error {
 ## 注意事项
 
 - 频道 Markdown 能否使用由平台权限决定。
-- 统一入口发送成功但解析回包失败时，会返回结果，`err` 也不是 nil。`Raw` 保留平台回包。
-- 旧方法把回包解码为 `message.SendMessageResponse`，其中 `Timestamp` 是 `int64`。收到 RFC3339 字符串时间戳会解码失败，消息仍可能已发出。
-- 旧方法解码失败时没有带 `Raw` 的成功结果。此时重发可能产生重复消息。旧入口示例不表示响应模型已修复或经过真实联调。
+- 如果统一入口已经发出消息，但未能解析 QQ 的响应，调用会同时返回结果和错误。响应原文保存在结果的 `Raw` 中。
+- 旧方法将响应解析为 `message.SendMessageResponse`，其中 `Timestamp` 是 `int64`。收到 RFC3339 字符串时间戳会解码失败，消息仍可能已发出。
+- 旧方法解析失败时，不会返回带 `Raw` 的发送结果。由于消息可能已经发出，直接重发可能造成重复。旧入口示例不表示响应模型已修复或经过真实联调。
 - 隐藏撤回提示的权限由平台检查。[统一撤回入口](../reference-and-recall.md)中的 `Context.Recall` 和 `Client.RecallMessage` 仅支持 QQ 单聊和群聊。
 
 ## 另请参阅
