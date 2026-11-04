@@ -152,6 +152,11 @@ func (c *Context) replyTarget() (message.ReplyTarget, error) {
 	case message.DIRECT_MESSAGE_CREATE:
 		target.Scene = message.SceneDirectMessage
 		target.ID = data.GuildID
+	case message.MESSAGE_REACTION_ADD, message.MESSAGE_REACTION_REMOVE:
+		target.Scene = message.SceneChannel
+		target.ID = data.ChannelID
+		target.MessageID = ""
+		target.EventID = c.Payload.ID
 	case message.INTERACTION_CREATE:
 		target.MessageID = ""
 		target.EventID = c.Payload.ID

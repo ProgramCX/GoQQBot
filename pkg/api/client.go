@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime/multipart"
 
 	"net/http"
 	"net/url"
@@ -82,7 +83,9 @@ type APIError struct {
 	StatusCode int
 	Code       int
 	TraceID    string
-	diagnostic string
+	// MessageAuditID 是 QQ 返回的消息审核 ID，未进入审核时为空。
+	MessageAuditID string
+	diagnostic     string
 }
 
 // DiagnosticMessage returns the bounded, redacted platform reason, or empty if none was supplied.
@@ -214,11 +217,6 @@ func (c *Client) Gateway(ctx context.Context) (string, error) {
 // Request performs an authenticated JSON request and returns an owned response body.
 // Request 执行已认证的 JSON 请求，并返回独立持有的响应正文。
 func (c *Client) Request(ctx context.Context, method, path string, body interface{}) ([]byte, error) {
-	token, err := c.AccessToken(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	var bodyReader io.Reader
 	if body != nil {
 		data, err := json.Marshal(body)
@@ -228,6 +226,26 @@ func (c *Client) Request(ctx context.Context, method, path string, body interfac
 		}
 		bodyReader = bytes.NewReader(data)
 	}
+	return c.request(ctx, method, path, "application/json", bodyReader)
+}
+
+// PostMultipart 发送已构造的 multipart 表单，沿用客户端的认证和错误处理。
+// 调用方负责结束表单写入，并在请求期间保持表单正文可读。
+func (c *Client) PostMultipart(ctx context.Context, path string, form *multipart.Writer, body io.Reader) ([]byte, error) {
+	if form == nil || body == nil {
+		return nil, fmt.Errorf("multipart form and body are required")
+	}
+	return c.request(ctx, http.MethodPost, path, form.FormDataContentType(), body)
+}
+
+func (c *Client) request(ctx context.Context, method, path, contentType string, bodyReader io.Reader) ([]byte, error) {
+	if c == nil || c.httpClient == nil || ctx == nil {
+		return nil, fmt.Errorf("API client and operation context are required")
+	}
+	token, err := c.AccessToken(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	url := BaseURL + path
 	req, err := http.NewRequestWithContext(ctx, method, url, bodyReader)
@@ -236,7 +254,7 @@ func (c *Client) Request(ctx context.Context, method, path string, body interfac
 	}
 
 	req.Header.Set("Authorization", "QQBot "+token)
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", contentType)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -256,6 +274,11 @@ func (c *Client) Request(ctx context.Context, method, path string, body interfac
 		Message    string `json:"message"`
 		Msg        string `json:"msg"`
 		ErrMessage string `json:"err_msg"`
+		Data       struct {
+			MessageAudit struct {
+				ID string `json:"audit_id"`
+			} `json:"message_audit"`
+		} `json:"data"`
 	}
 	// Success bodies vary by endpoint, so inspect only the optional error envelope.
 	// 成功正文因端点而异，因此仅检查可选的错误信封。
@@ -276,7 +299,11 @@ func (c *Client) Request(ctx context.Context, method, path string, body interfac
 		if reason == "" {
 			reason = failure.ErrMessage
 		}
-		return nil, &APIError{StatusCode: resp.StatusCode, Code: failure.Code, TraceID: failure.TraceID, diagnostic: redactAPIDiagnostic(reason, c.appID, c.appSecret, token)}
+		apiErr := &APIError{StatusCode: resp.StatusCode, Code: failure.Code, TraceID: failure.TraceID, diagnostic: redactAPIDiagnostic(reason, c.appID, c.appSecret, token)}
+		if failure.Code == 304023 || failure.Code == 304024 {
+			apiErr.MessageAuditID = failure.Data.MessageAudit.ID
+		}
+		return nil, apiErr
 	}
 
 	return data, nil

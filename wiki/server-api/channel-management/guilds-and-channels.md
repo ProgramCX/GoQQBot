@@ -1,66 +1,66 @@
 # 频道资料与子频道管理
 
-频道和子频道管理可通过[原始 API](../../advanced/raw-api.md)接入。SDK 尚未提供用于创建、删除、修改和查询的专用方法与数据结构。
+用 `channel.NewClient(client)` 创建频道客户端，可查询机器人所在的频道，并管理频道下的子频道。
+
+## 配置事件订阅
+
+### 使用 WebSocket
+
+将所需条目合并到 `config.yaml` 现有的 `connection.websocket.intents` 列表，保留其他业务订阅。保存后重启机器人。
+
+```yaml
+connection:
+  mode: websocket
+  websocket:
+    intents:
+      - GUILDS
+```
+
+[全部 Intent 与下属事件](../../getting-started/events/intents.md)
+
+### 使用 Webhook
+
+在 QQ 机器人运营与管理后台选择 **开发设置 → 事件订阅与回调**。将接入方式设为 **Webhook**。在 **接收事件配置** 选择 **部分接收**，按事件标识勾选`GUILD_CREATE`、`GUILD_UPDATE`、`GUILD_DELETE`、`CHANNEL_CREATE`、`CHANNEL_UPDATE`、`CHANNEL_DELETE`，按需勾选。保存设置。已选 **全部接收** 时，无需逐项勾选。
+
+[QQ 机器人运营与管理后台](https://q.qq.com/qqbot/dashboard/) · [配置 HTTPS 回调](../../getting-started/events/webhook.md)
 
 ## 查询频道资料
-
-下例在应用服务中查询频道，并按业务需要解码字段。
 
 ```go
 package guide
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"net/url"
 
 	"github.com/ProgramCX/GoQQBot/pkg/api"
+	"github.com/ProgramCX/GoQQBot/pkg/api/channel"
 )
 
-type Guild struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	MemberCount int    `json:"member_count"`
-	JoinedAt    string `json:"joined_at"`
-}
-
-func ReadGuild(ctx context.Context, client *api.Client, guildID string) (*Guild, error) {
-	if guildID == "" {
-		return nil, fmt.Errorf("guild ID is required")
-	}
-	raw, err := client.Get(ctx, "/guilds/"+url.PathEscape(guildID))
-	if err != nil {
-		return nil, err
-	}
-	var guild Guild
-	if err := json.Unmarshal(raw, &guild); err != nil {
-		return nil, fmt.Errorf("decode guild: %w", err)
-	}
-	return &guild, nil
+func ReadGuild(ctx context.Context, client *api.Client, guildID string) (*channel.Guild, error) {
+	return channel.NewClient(client).GetGuild(ctx, guildID)
 }
 ```
 
-示例保留字符串时间戳。
+用 `ListGuilds(ctx, channel.GuildListOptions{Limit: 20})` 查询第一页。查询后一页时，将当前页最后一项的 ID 填入 `After`。
 
 ## 子频道操作
 
-按操作选择官方路径和 HTTP 方法。
+按操作选择客户端方法。
 
-| 操作 | 官方文档 | HTTP |
+| 操作 | 官方文档 | SDK 方法 |
 | --- | --- | --- |
-| 列表 | [获取子频道列表](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/guilds_guild_id_channels.get.html) | `GET /guilds/{guild_id}/channels` |
-| 创建 | [创建子频道](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/guilds_guild_id_channels.post.html) | `POST /guilds/{guild_id}/channels` |
-| 详情 | [获取子频道详情](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/channels_channel_id.get.html) | `GET /channels/{channel_id}` |
-| 修改 | [修改子频道](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/channels_channel_id.patch.html) | `PATCH /channels/{channel_id}` |
-| 删除 | [删除子频道](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/channels_channel_id.delete.html) | `DELETE /channels/{channel_id}` |
+| 列表 | [获取子频道列表](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/guilds_guild_id_channels.get.html) | `ListChannels` |
+| 创建 | [创建子频道](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/guilds_guild_id_channels.post.html) | `CreateChannel` |
+| 详情 | [获取子频道详情](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/channels_channel_id.get.html) | `GetChannel` |
+| 修改 | [修改子频道](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/channels_channel_id.patch.html) | `UpdateChannel` |
+| 删除 | [删除子频道](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/channels_channel_id.delete.html) | `DeleteChannel` |
 
-`Client` 没有 `Patch` 便捷方法。用 `client.Request(ctx, http.MethodPatch, path, body)` 发起修改。
+`UpdateChannel` 接收 `ChannelPatch`。只设置需要修改的字段。指针为 `nil` 时省略该字段，指向 `0` 时会明确提交零值。
 
 ## 注意事项
 
 - 做时间运算前，按平台格式解析时间戳。RFC3339 或 ISO8601 字符串无法直接解码成整数。
-- 请求模型、权限校验、删除确认和操作审计由应用负责。
+- QQ 检查管理权限。删除前的业务确认与审计由应用负责。
 - 公开的端点变量会影响共用地址。指定自定义服务器时，应使用独立的客户端配置。
 
 ## 另请参阅

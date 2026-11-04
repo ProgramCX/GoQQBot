@@ -33,7 +33,7 @@ func ReplyShared(ctx *types.Context) error {
 
 - 注册处理函数不会开通群全量消息权限。订阅前需确认平台已开放。
 - 群会话和成员的 OpenID 分别不同于普通群号和 QQ 号。
-- [群管理](../../group-management/README.md)与消息发送是两种能力。SDK 尚未完整封装群管理、禁言和成员移除。
+- [群管理](../../group-management/README.md)与消息发送是两种能力。群管理客户端提供禁言和成员移除等专用方法。
 
 ## 另请参阅
 

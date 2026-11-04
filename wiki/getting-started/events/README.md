@@ -35,6 +35,8 @@ QQ 用事件通知消息、交互和机器人生命周期变化。WebSocket 和 
 
 ## 注意事项
 
+先看[连接方式对比](connection.md)，再查[全部 Intent 与下属事件](intents.md)。
+
 - WebSocket 的 intents 不会替代 Webhook 管理端的订阅。SDK 无法补回平台未投递的事件。
 - 命令优先处理。`OnMessage` 只接收未匹配命令的消息。
 - `OnAnyMessage` 不处理交互或生命周期事件。

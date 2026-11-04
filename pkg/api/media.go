@@ -15,6 +15,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/ProgramCX/GoQQBot/internal/apiwire"
 	"github.com/ProgramCX/GoQQBot/pkg/message"
 )
 
@@ -48,6 +49,9 @@ func conversationPath(ctx context.Context, c *Client, target message.Target) (st
 // QQ enforces the two-minute window and permissions; errors remain inspectable as *APIError.
 // QQ 执行两分钟时限及权限检查；错误仍可通过 *APIError 检查。
 func (c *Client) RecallMessage(ctx context.Context, target message.Target, messageID string) error {
+	if target.Scene == message.SceneChannel || target.Scene == message.SceneDirectMessage {
+		return c.RecallChannelMessage(ctx, target, messageID, false)
+	}
 	path, err := conversationPath(ctx, c, target)
 	if err != nil {
 		return err
@@ -56,6 +60,28 @@ func (c *Client) RecallMessage(ctx context.Context, target message.Target, messa
 		return fmt.Errorf("%w: message ID is required", ErrInvalidReplyTarget)
 	}
 	_, err = c.Delete(ctx, path+"/messages/"+url.PathEscape(messageID))
+	return err
+}
+
+// RecallChannelMessage 撤回子频道或频道私信中的指定消息，可选择隐藏提示。
+func (c *Client) RecallChannelMessage(ctx context.Context, target message.Target, messageID string, hideTip bool) error {
+	var route string
+	switch target.Scene {
+	case message.SceneChannel:
+		route = CHANNEL_DELETE_MESSAGE
+	case message.SceneDirectMessage:
+		route = CHANNEL_PRIVATE_DELETE
+	default:
+		return fmt.Errorf("%w: recall requires a channel or direct session", ErrInvalidReplyTarget)
+	}
+	path, err := apiwire.Path(route, target.ID, messageID)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrInvalidReplyTarget, err)
+	}
+	if hideTip {
+		path += "?hidetip=true"
+	}
+	_, err = c.Delete(ctx, path)
 	return err
 }
 

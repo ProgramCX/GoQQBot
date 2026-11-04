@@ -1,10 +1,10 @@
-# 示例程序与人工验收
+# 运行示例程序
 
 在 SDK 仓库根目录运行示例，可以用 QQ 客户端验证消息和按钮的效果。示例配置使用自己的机器人凭证。若要在独立项目中接入 SDK，请参考[快速开始](../getting-started/quick-start.md)。
 
 ## 选择示例
 
-按验收任务选择启动命令。
+根据要测试的功能选择示例。
 
 | 示例 | 启动命令 | 交互入口 |
 | --- | --- | --- |
@@ -14,7 +14,7 @@
 | 富媒体 | `go run ./examples/media -config config.yaml` | `/media` |
 | 图片素材 | `go run ./examples/materials -config config.yaml -image-file ./test/image.jpg` | `/materials` |
 
-验收群聊基础回复可用[快速开始中的完整程序](../getting-started/quick-start.md)或 `menu` 示例。
+测试群聊基础回复可用[快速开始中的完整程序](../getting-started/quick-start.md)或 `menu` 示例。
 
 运行 `go run ./examples/interactions -help` 可查看当前启动参数。
 
@@ -63,9 +63,9 @@ go run ./examples/media -config config.yaml -debug-events `
 - PowerShell 续行反引号后出现空格时，续行会失败。
 - `example.com` 用来展示格式。测试卡片时换成可访问地址。语音格式、编码和大小以 QQ 当前要求为准。改名为 `.silk` 不会转码。
 - `-image-url` 与 `-image-file` 分别配置。设置其中一个不会补齐另一个。
-- **验收范围。** 模拟 HTTP 测试只覆盖请求逻辑，显示效果需在 QQ 客户端验证。URL 上传由 QQ 下载文件，本地分片上传则由 SDK 发送文件。前一种方式失败时，仍可验证后一种方式。
-- 撤回示例只撤回刚发送的机器人回复。删除素材会影响后续使用，验收使用专门的测试素材。示例只在当前进程保存素材引用，不提供业务素材数据库。
+- **测试范围。** 模拟 HTTP 测试只覆盖请求逻辑，显示效果需在 QQ 客户端验证。URL 上传由 QQ 下载文件，本地分片上传则由 SDK 发送文件。前一种方式失败时，仍可验证后一种方式。
+- 撤回示例只撤回刚发送的机器人回复。删除素材会影响后续使用，请使用专门的测试素材。示例只在当前进程保存素材引用，不提供业务素材数据库。
 
 ## 另请参阅
 
-[富媒体上传](../server-api/messages/rich-media/README.md) · [素材管理](../server-api/messages/material-management.md) · [消息交互验收明细](../../docs/interactions-acceptance.md) · [测试消息发送](../advanced/testing.md)
+[富媒体上传](../server-api/messages/rich-media/README.md) · [素材管理](../server-api/messages/material-management.md) · [消息交互测试明细](../../docs/interactions-acceptance.md) · [测试消息发送](../advanced/testing.md)

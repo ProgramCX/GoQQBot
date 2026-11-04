@@ -16,7 +16,7 @@ go mod init example.com/mybot
 go get github.com/ProgramCX/GoQQBot
 ```
 
-SDK 发布后，可以把依赖固定到已验收的标签或提交。
+项目可以将 SDK 依赖固定到指定版本标签或提交。
 
 ## 使用本地工作区
 

@@ -4,6 +4,8 @@
 
 ## 准备配置
 
+### 使用 WebSocket
+
 在运行程序的目录里创建 `config.yaml`，填写 `appId` 和 `appSecret`。获取方式见[访问凭证](credentials.md)。
 
 ```yaml
@@ -19,6 +21,10 @@ connection:
 ```
 
 如果凭证来自环境变量或密钥管理服务，可以用[内存配置](configuration.md#使用内存配置)。
+
+### 使用 Webhook
+
+按 [Webhook 配置](events/webhook.md) 设置公网 HTTPS 回调。在 [QQ 机器人运营与管理后台](https://q.qq.com/qqbot/dashboard/)打开 **开发设置 → 事件订阅与回调**，选择 **Webhook**。在 **接收事件配置** 使用 **部分接收** 时，勾选 `C2C_MESSAGE_CREATE` 和 `GROUP_AT_MESSAGE_CREATE`。完成订阅后可运行下方同一份 Go 程序。
 
 ## 编写程序
 

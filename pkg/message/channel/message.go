@@ -9,6 +9,7 @@ package channel
 
 import "time"
 
+// Message 表示 QQ 子频道或频道私信的消息对象。
 type Message struct {
 	ID               string              `json:"id"`
 	ChannelID        string              `json:"channel_id"`
@@ -26,6 +27,10 @@ type Message struct {
 	Seq              int                 `json:"seq"`
 	SeqInChannel     string              `json:"seq_in_channel"`
 	MessageReference MessageReference    `json:"message_reference"`
+	TTS              bool                `json:"tts"`
+	Pinned           bool                `json:"pinned"`
+	Type             int                 `json:"type"`
+	Flags            uint64              `json:"flags"`
 }
 
 type User struct {

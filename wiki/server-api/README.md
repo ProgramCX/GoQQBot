@@ -9,9 +9,9 @@
 | 消息交互 | [交互概述](messages/interactions/README.md) | 按钮、文本交互、回调路由和 ACK |
 | 富媒体消息 | [上传概述](messages/rich-media/README.md) | URL 上传、本地分片上传及底层分片步骤 |
 | 图片素材管理 | [Markdown 图片素材](messages/material-management.md) | 准备、传输、确认、查询、复用和删除 |
-| 机器人 | [机器人接口](robot/README.md) | 资料、分享、菜单管理尚无类型化封装 |
-| 群聊管理 | [群聊管理](group-management/README.md) | 查询、成员管理和审批尚无类型化封装 |
-| 频道管理 | [频道管理](channel-management/README.md) | 管理与内容类接口主要尚未封装 |
+| 机器人 | [机器人接口](robot/README.md) | 资料、分享链接、全局菜单与指令面板管理 |
+| 群聊管理 | [群聊管理](group-management/README.md) | 资料、成员、禁言、黑名单、申请和审批策略 |
+| 频道管理 | [频道管理](channel-management/README.md) | 频道、子频道、成员、身份组、权限和内容管理 |
 
 
 

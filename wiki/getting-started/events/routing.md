@@ -2,6 +2,28 @@
 
 群聊和单聊可以共用同一个处理函数。上下文会选择回复目标，无需拼接群或用户的发送路径。
 
+## 配置事件订阅
+
+### 使用 WebSocket
+
+将所需条目合并到 `config.yaml` 现有的 `connection.websocket.intents` 列表，保留其他业务订阅。保存后重启机器人。
+
+```yaml
+connection:
+  mode: websocket
+  websocket:
+    intents:
+      - GROUP_AND_C2C_EVENT
+```
+
+[全部 Intent 与下属事件](./intents.md)
+
+### 使用 Webhook
+
+在 QQ 机器人运营与管理后台选择 **开发设置 → 事件订阅与回调**。将接入方式设为 **Webhook**。在 **接收事件配置** 选择 **部分接收**，按事件标识勾选`C2C_MESSAGE_CREATE` 和 `GROUP_AT_MESSAGE_CREATE`。其他处理函数按实际事件勾选。保存设置。已选 **全部接收** 时，无需逐项勾选。
+
+[QQ 机器人运营与管理后台](https://q.qq.com/qqbot/dashboard/) · [配置 HTTPS 回调](./webhook.md)
+
 ## 按类型注册
 
 在 Bot 启动前调用下面的注册函数。
