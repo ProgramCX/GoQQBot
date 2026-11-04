@@ -1,8 +1,10 @@
 # 频道资料与子频道管理
 
-SDK 尚未提供频道、子频道 CRUD 的类型化方法。下面演示如何在应用服务中组合原始 API，按业务所需字段解码频道资料。
+频道和子频道管理可通过[原始 API](../../advanced/raw-api.md)接入。SDK 尚未提供类型化的增删改查方法。
 
 ## 查询频道资料
+
+下例在应用服务中查询频道，并按业务需要解码字段。
 
 ```go
 package guide
@@ -39,9 +41,11 @@ func ReadGuild(ctx context.Context, client *api.Client, guildID string) (*Guild,
 }
 ```
 
-示例保留字符串时间戳。需要时间运算时根据平台实际格式解析，不把 RFC3339/ISO8601 字符串直接解码为整数。
+示例保留字符串时间戳。
 
 ## 子频道操作
+
+按操作选择官方路径和 HTTP 方法。
 
 | 操作 | 官方文档 | HTTP |
 | --- | --- | --- |
@@ -51,10 +55,14 @@ func ReadGuild(ctx context.Context, client *api.Client, guildID string) (*Guild,
 | 修改 | [修改子频道](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/channels_channel_id.patch.html) | `PATCH /channels/{channel_id}` |
 | 删除 | [删除子频道](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/channels_channel_id.delete.html) | `DELETE /channels/{channel_id}` |
 
-`Client` 没有 `Patch` 便捷方法，但可以使用 `client.Request(ctx, http.MethodPatch, path, body)`。请求模型、权限校验、删除确认和操作审计由应用负责；不要向公共可修改的端点变量写入自定义服务器地址。
+`Client` 没有 `Patch` 便捷方法。用 `client.Request(ctx, http.MethodPatch, path, body)` 发起修改。
+
+## 注意事项
+
+- 做时间运算前，按平台格式解析时间戳。RFC3339 或 ISO8601 字符串无法直接解码成整数。
+- 请求模型、权限校验、删除确认和操作审计由应用负责。
+- 修改公开端点变量会改变共用地址。自定义服务器地址应避开这些变量。
 
 ## 另请参阅
 
-- [官方获取频道详情](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/guilds_guild_id.get.html)
-- [自定义 HTTP 客户端](../../getting-started/api-calls.md)
-- [成员和权限](members-and-permissions.md)
+[官方获取频道详情](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/guilds_guild_id.get.html) · [自定义 HTTP 客户端](../../getting-started/api-calls.md) · [成员和权限](members-and-permissions.md)
