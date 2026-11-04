@@ -1,0 +1,53 @@
+name: 同步文档到服务器
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-ssh
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run docs:build
+        env:
+          DOCS_BASE: ${{ secrets.DOCS_SSH_BASE }}
+          DOCS_SOURCE_REF: ${{ github.ref_name }}
+      - name: 安装 SSH 部署密钥
+        uses: shimataro/ssh-key-action@87a8f067114a8ce263df83e9ed5c849953548bc3 # v2.8.1
+        with:
+          key: ${{ secrets.DOCS_SSH_PRIVATE_KEY }}
+          name: goqqbot_docs
+          known_hosts: ${{ secrets.DOCS_SSH_KNOWN_HOSTS }}
+          config: |
+            Host goqqbot-docs
+              HostName ${{ secrets.DOCS_SSH_HOST }}
+              Port ${{ secrets.DOCS_SSH_PORT }}
+              User ${{ secrets.DOCS_SSH_USER }}
+              IdentityFile ~/.ssh/goqqbot_docs
+              IdentitiesOnly yes
+              StrictHostKeyChecking yes
+              BatchMode yes
+              PasswordAuthentication no
+              KbdInteractiveAuthentication no
+              ConnectTimeout 15
+      - name: 同步文档
+        env:
+          DOCS_SSH_PATH: ${{ secrets.DOCS_SSH_PATH }}
+        run: rsync -rlzs --delay-updates -e ssh wiki/.vitepress/dist/ "goqqbot-docs:${DOCS_SSH_PATH:?DOCS_SSH_PATH is required}/"
