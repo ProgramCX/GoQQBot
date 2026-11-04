@@ -21,14 +21,14 @@
 
 ## 事件与数据归属
 
-通过 `GUILDS`、`GUILD_MEMBERS` 等 intent [订阅事件](../../getting-started/events/README.md)。用 `OnEvent` 接收原始载荷。缺少专用事件常量时，用 `message.EventId("官方事件名")`。
+通过 `GUILDS`、`GUILD_MEMBERS` 等 intent [订阅事件](../../getting-started/events/README.md)。用 `OnEvent` 接收原始事件数据。缺少专用事件常量时，用 `message.EventId("官方事件名")`。
 
 成员数据和频道身份组按机器人与频道管理。
 
 ## 注意事项
 
 - 收到频道消息不表示有管理权限。`AdminOnly()` 只描述按钮交互权限。服务端仍需检查业务权限和平台授权。
-- 注册路由不会订阅事件，也不会生成对应的事件模型（DTO）。
+- 注册处理函数不会自动订阅事件，也不会为事件生成用于解析数据的结构（DTO）。
 - 普通 QQ 号码无法替代 OpenID。群成员身份组与频道身份组的权限不可互用。
 
 ## 另请参阅
